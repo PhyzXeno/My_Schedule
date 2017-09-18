@@ -1,0 +1,144 @@
+define(function (require, exports, module) {
+
+    var webIm = require('../../sdk/1.7/webim.js');
+    var params = require('./params.js');
+    var event = require('../libs/event.js');
+
+    var fileSizeLimit = 1024;
+
+    /**
+     * 当点击发送图片按钮时
+     */
+    $('#upload-pic').click(function () {
+        $('#upload-pic-form #uploadPic').trigger('click')
+    });
+
+    /**
+     * 当选择图片后
+     */
+    $('#upload-pic-form #uploadPic').change(function () {
+        var uploadFile = this;
+        //判断浏览器版本
+        if (webIm.BROWSER_INFO.type == 'ie' && parseInt(webIm.BROWSER_INFO.ver) <= 9) {
+            uploadPicLowIE(uploadFile);
+        } else {
+            if (!window.File || !window.FileList || !window.FileReader) {
+                $('#upload-pic-form')[0].reset();
+                alert("您的浏览器不支持File Api");
+                return;
+            }
+
+            var file = uploadFile.files[0];
+            var fileSize = file.size;
+
+            //先检查图片类型和大小
+            if (!checkIsImage(uploadFile, fileSize)) {
+                $('#upload-pic-form')[0].reset();
+                return;
+            }
+            //上传图片
+            uploadPic(file)
+        }
+    });
+
+    //检查文件类型和大小
+    function checkIsImage(obj, fileSize) {
+        var picExts = 'jpg|jpeg|png|bmp|gif|webp';
+        var photoExt = obj.value.substr(obj.value.lastIndexOf(".") + 1).toLowerCase();//获得文件后缀名
+        var pos = picExts.indexOf(photoExt);
+        if (pos < 0) {
+            alert("您选中的文件不是图片，请重新选择");
+            return false;
+        }
+        fileSize = Math.round(fileSize / 1024 * 100) / 100; //单位为KB
+        if (fileSize > fileSizeLimit) {
+            alert("您选择的图片大小超过限制(最大为1M)，请重新选择");
+            return false;
+        }
+        return true;
+    }
+
+    //上传图片
+    function uploadPic(file) {
+
+        var businessType;//业务类型，1-发群图片，2-向好友发图片
+        if (params.selType == webIm.SESSION_TYPE.C2C) {//向好友发图片
+            businessType = webIm.UPLOAD_PIC_BUSSINESS_TYPE.C2C_MSG;
+        } else if (params.selType == webIm.SESSION_TYPE.GROUP) {//发群图片
+            businessType = webIm.UPLOAD_PIC_BUSSINESS_TYPE.GROUP_MSG;
+        }
+        //封装上传图片请求
+        var opt = {
+            'file': file, //图片对象
+            'onProgressCallBack': onProgressCallBack, //上传图片进度条回调函数
+            'From_Account': params.loginInfo.identifier, //发送者帐号
+            'To_Account': params.selToID, //接收者
+            'businessType': businessType//业务类型
+        };
+        //上传图片
+        webIm.uploadPic(opt,
+            function (resp) {
+                $('#upload-pic-form')[0].reset();
+                event.fire('onUploadImg', resp);
+            },
+            function (err) {
+                console.log(err.ErrorInfo);
+            }
+        );
+    }
+
+    //上传图片(用于低版本IE)
+    function uploadPicLowIE(file) {
+        var businessType;//业务类型，1-发群图片，2-向好友发图片
+        if (params.selType == webIm.SESSION_TYPE.C2C) {//向好友发图片
+            businessType = webIm.UPLOAD_PIC_BUSSINESS_TYPE.C2C_MSG;
+        } else if (params.selType == webIm.SESSION_TYPE.GROUP) {//发群图片
+            businessType = webIm.UPLOAD_PIC_BUSSINESS_TYPE.GROUP_MSG;
+        }
+        //封装上传图片请求
+        var opt = {
+            'formId': 'upload-pic-form', //上传图片表单id
+            'fileId': 'uploadPic', //file控件id
+            'To_Account': params.selToID, //接收者
+            'businessType': businessType//图片的使用业务类型
+        };
+        webIm.submitUploadFileForm(opt,
+            function (resp) {
+                $('#upload-pic-form')[0].reset();
+                event.fire('onUploadImg', resp);
+            },
+            function (err) {
+                alert(err.ErrorInfo);
+            }
+        );
+    }
+
+    /**
+     * 上传进度回调
+     */
+    function onProgressCallBack(loadedSize, totalSize) {
+        console.log('上传图片进度: ' + loadedSize + ' / ' + totalSize)
+    }
+
+    $(document).on('click','div.msg-content  img',function () {
+        imageClick(this);
+    })
+
+    //单击图片事件
+    function imageClick(imgObj) {
+        var imgUrls = imgObj.src;
+        var imgUrlArr = imgUrls.split("#"); //字符分割
+        var smallImgUrl = imgUrlArr[0];//小图
+        var bigImgUrl = imgUrlArr[1];//大图
+        var oriImgUrl = imgUrlArr[2];//原图
+        var bigPicDiv = document.getElementById('bigPicDiv');
+        bigPicDiv.innerHTML = '';
+        var span = document.createElement('span');
+        span.innerHTML = '<img class="img-thumbnail" src="' + oriImgUrl + '" />';
+        bigPicDiv.insertBefore(span, null);
+        $('#click_pic_dialog').modal('show');
+    }
+
+
+
+});

@@ -1,0 +1,98 @@
+/* 
+BOOTSTRAP STYLE修改-扩展
+*/
+
+/* label{font-weight: normal;} */
+
+.btn-fat{padding:6px 20px;}
+.modal-body{padding: 20px 30px}
+/*** 边框按钮 ***/
+.btn-wireframe{color: #0078d0;border-color: #0093f0;background: none;}
+.btn-wireframe:focus,.btn-wireframe:hover{color: #0078d0;border-color: #0093f0;background-color: #f6f6f6;}
+
+.btn-width{font-size: 14px;width: 100px;text-align: center;padding: 0;height:25px;line-height: 25px;overflow: hidden;margin:5px 5px 0 0; }
+.btn-width em{color: #f8b541;}
+
+.btn-width:focus,.btn-width:hover{color: #fff;background-color: #0093f0;}
+.btn-width:focus em,.btn-width:hover em{color:#fffc00;}
+
+/*** 按钮颜色 ***/
+.btn-primary {
+  color: #fff;
+  background-color: #0093f0;
+  border-color: #0093f0;
+}
+.btn-primary:focus,
+.btn-primary.focus {
+  color: #fff;
+  background-color: #0078d0;
+  border-color: #0078d0;
+}
+.btn-primary:hover {
+  color: #fff;
+  background-color: #0078d0;
+  border-color: #0078d0;
+}
+
+.c-table > thead > tr > th, .c-table > tbody > tr > th, .c-table > tfoot > tr > th, .c-table > thead > tr > td, .c-table > tbody > tr > td, .c-table > tfoot > tr > td{vertical-align: middle;}
+.c-table > thead > tr > th,.c-table > tbody > tr > td{text-align:center;}
+.c-table > thead > tr > th:first-child,.c-table > tbody > tr > td:first-child{text-align:left;}
+
+/*** 分页 ***/
+.pagination > li > a,
+.pagination > li > span {
+  position: relative;
+  float: left;
+  padding: 6px 12px;
+  margin-left: -1px;
+  line-height: 1.42857143;
+  color: #0078d0;
+  text-decoration: none;
+  background-color: #fff;
+  border: 1px solid #ddd;
+}
+.pagination > li > a,.pagination > .disabled > span{margin: 0 5px;border-radius: 2px;}
+
+.pagination > li:first-child > a,.pagination > li:first-child > span {
+  margin-left: 0;
+  border-top-left-radius: 2px;
+  border-bottom-left-radius: 2px;
+}
+.pagination > li:last-child > a, .pagination > li:last-child > span {
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+.pagination > li > a:hover,
+.pagination > li > span:hover,
+.pagination > li > a:focus,
+.pagination > li > span:focus {
+  z-index: 3;
+  color: #0093f0;
+  background-color: #eee;
+  border-color: #ddd;
+}
+.pagination > .active > a,
+.pagination > .active > span,
+.pagination > .active > a:hover,
+.pagination > .active > span:hover,
+.pagination > .active > a:focus,
+.pagination > .active > span:focus {
+  z-index: 2;
+  color: #fff;
+  cursor: default;
+  background-color: #0078d0;
+  border-color: #0078d0;
+}
+.pagination > .disabled > span, .pagination > .disabled > span:hover, .pagination > .disabled > span:focus, .pagination > .disabled > a, .pagination > .disabled > a:hover, .pagination > .disabled > a:focus {
+    color: #777;
+    cursor: not-allowed;
+    background-color: #fff;
+    border-color: #ddd;
+    border-radius: 2px;
+}
+.pagination input{
+  width:40px;position: relative;
+  border:1px solid #ddd;text-align: center;font-size: 14px;
+  border-radius: 2px;
+  float:left;margin-left: 5px;height:34px;line-height: 34px
+}
