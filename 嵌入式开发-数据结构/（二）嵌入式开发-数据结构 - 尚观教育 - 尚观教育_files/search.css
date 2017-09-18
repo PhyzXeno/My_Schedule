@@ -1,0 +1,259 @@
+body{
+	font-family: "微软雅黑";
+}
+#search_div{
+	width: 574px;
+	height: 37px;
+	border:solid thin #0078d0;
+	border-radius: 37px;
+}
+#search_input{
+	width: 250px;
+	float: left;
+	height: 30px;
+	line-height: 30px;
+	vertical-align: middle;
+	margin-left: 16px;
+	border: 0px;
+	font-size: 14px;
+	word-wrap: break-word;
+    word-break: break-all;
+    -moz-outline:none;
+    outline: none;
+    margin-top: 2px;
+    background-color: #FFFFFF;
+}
+#search_input[placeholder]{
+ color:#999 !important;
+ } 
+::-webkit-input-placeholder { /* WebKit browsers */
+color: #999;
+}
+:-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+color: #999;
+}
+::-moz-placeholder { /* Mozilla Firefox 19+ */
+color: #999;
+}
+:-ms-input-placeholder { /* Internet Explorer 10+ */
+color: #999;
+} 
+/*热门推荐*/
+.recommend{
+	height: 24px;
+	line-height: 24px;
+	vertical-align: middle;
+	margin-top: 6.5px;
+	background-color: rgb(216,216,216);
+	color: #FFFFFF;
+	font-size: 12px;
+	text-align: center;
+	padding-left: 10px;
+	padding-right: 10px;
+	border-radius: 24px;
+	float: right;
+	margin-right: 10px;
+	cursor: pointer;
+}
+.recommend:hover{
+	background-color:#0078d0 ;
+        color: #FFFFFF !important;
+        text-decoration: none;
+}
+#submit_button{
+	width: 28px;
+	height: 29px;
+	background-image: url(../img/search.png);
+	background-repeat: no-repeat;
+	float: right;
+	margin-top: 1.5px;
+	margin-right: 6.5px;
+	border-radius: 10px;
+	border: 0px;
+	outline: none;
+	cursor: pointer;
+        background-color: #fff;
+	
+}
+/*搜索结果显示*/
+#search_result{
+	width: 574px;
+	/*height: 300px;*/
+	border:solid thin #0078d0;
+	margin-top: 10px;
+	background-color: #FFFFFF;
+	padding-bottom: 20px;
+        z-index: 999;
+        position: absolute;
+        /*top:80px;*/
+}
+.result_tilte{
+	width: 535px;
+	height: 16px;
+	line-height: 16px;
+	vertical-align: middle;
+	font-size: 13px;
+	color: #878686;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 20px;
+	background-image: url(../img/s_t.png);
+	background-repeat:repeat-x;
+}
+.result_tilte_txt{
+	float: left;
+	width: auto;
+	height: 16px;
+	line-height: 16px;
+	vertical-align: middle;
+	font-size: 13px;
+	color: rgb(140,140,141);
+	background-color: #FFFFFF;
+	padding-right: 10px;
+}
+.search_value{
+	color: red;
+        font-weight: bolder;
+}
+/*搜索结果*/
+.result_list{
+	width: 535px;
+	height: 50px;
+	color: rgb(50,50,51);
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 20px;
+}
+.result_ico{
+	width: 50px;
+	height: 50px;
+	border-radius: 100%;
+	float: left;
+}
+.result_list_content{
+	width: 470px;
+	height: 50px;
+	float: left;
+	margin-left: 10px;
+	cursor: pointer;
+	/*border: solid thin red;*/
+}
+.result_list_tilte{
+	height: 50px;
+	line-height: 50px;
+	width: 100%;
+	float: left;
+	font-size: 17px;
+	color: rgb(50,50,51);
+        white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden; 
+}
+.student_number_txt{
+    	height: 50px;
+	line-height: 50px;
+	width: 70%;
+	float: left;
+	font-size: 17px;
+	color: rgb(50,50,51);
+        white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden; 
+}
+.student_number{
+	height: 24px;
+	line-height: 20px;
+	vertical-align: middle;
+	margin-top: 13px;
+	background-color: rgb(216,216,216);
+	color: #FFFFFF;
+	font-size: 13px;
+	text-align: center;
+	padding-left: 10px;
+	padding-right: 10px;
+	border-radius: 24px;
+	float: right;
+	margin-right: 10px;
+	padding-top: 3px;
+	padding-bottom: 3px;
+	margin-left: 20px;	
+}
+.introduce{
+	height: 20px;
+	line-height: 20px;
+	vertical-align: middle;
+	width: 100%;
+	float: left;
+	font-size: 14px;
+	color: rgb(50,50,51);
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+/*班级列表搜索结果*/
+.result_class_list{
+	width: 535px;
+	height: 20px;
+	color: rgb(50,50,51);
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 5px;
+	font-size: 13px;
+	vertical-align: middle;
+	cursor: pointer;
+}
+.result_class_list_title{
+	float: left;
+}
+.result_class_list_number{
+	float: right;
+	color: rgb(140,140,141);
+}
+.result_class_search{
+	color: #000000;
+	font-weight: bold;
+}
+/*讲师搜索结果*/
+.teacher_content{
+	width: 535px;
+	height: 50px;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 20px;
+}
+.teacher_list{
+	width: 170px;
+	height: 50px;
+	float: left;
+	cursor: pointer;
+}
+.teacher_list img{
+	width: 50px;
+	height: 50px;
+	border-radius: 100%;
+	float: left;
+}
+.teacher_name{
+	color: #000000;
+	font-size: 18px;
+	vertical-align: middle;
+	height: 50px;
+	line-height: 50px;
+	padding-left: 10px;
+	width: 100px;
+	float: left;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+.teacher_name span{
+	color: red;
+        font-weight: bold;
+}
+
+/*搜索下拉选择样式*/
+input:-webkit-autofill, textarea:-webkit-autofill, select:-webkit-autofill {
+    background-color: #FFFFFF;
+    background-image: none;
+    color: rgb(0, 0, 0);
+}

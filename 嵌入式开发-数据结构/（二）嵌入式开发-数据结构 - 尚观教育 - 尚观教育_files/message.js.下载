@@ -1,0 +1,770 @@
+define(function (require, exports, module) {
+
+    var webIm = require('../../sdk/1.7/webim.js');
+    var params = require('./params.js');
+    var event = require('../libs/event.js');
+    var animate = require('../animate.js');
+    var tools = require('../../tools.js');
+    var user = require('./user.js');
+
+    exports.roles = {
+        200: 'Member',
+        300: 'Admin',
+        400: 'Owner',
+        0: ''
+    };
+
+    /**
+     * IE9(含)以下浏览器用到的jsonp回调函数
+     */
+    exports.jsonpCallback = function (rspData) {
+        webIm.setJsonpLastRspData(rspData);
+    };
+
+    /**
+     * 监听连接状态回调变化事件
+     * @param response
+     */
+    exports.onConnNotify = function (response) {
+        switch (response.ErrorCode) {
+            case webIm.CONNECTION_STATUS.ON:
+                // 连接状态正常
+                break;
+            case webIm.CONNECTION_STATUS.OFF:
+                console.error('连接已断开，无法收到新消息，请检查下你的网络是否正常');
+                break;
+            default:
+                console.error('未知连接状态,status=' + response.ErrorCode);
+                break;
+        }
+    };
+
+    exports.onC2cEventNotifys = function(notify) {
+        
+    }
+    /**
+     * 被新实例踢下线的回调处理
+     */
+    exports.onKickedEventCall = function () {
+        if (confirm('您在其他地方登陆了聊天室, 被挤掉线! 是否需要刷新页面,重新登陆?')) {
+            window.location.reload();
+        }
+        exports.sendSystemMsg('您在其他地方登陆了聊天室, 被挤掉线!');
+        exports.sendSystemMsg('请刷新页面,重新登录');
+        console.error("其他地方登录，被T了");
+    };
+
+    /**
+     * 监听新消息(私聊/普通群/全员推送)事件
+     * @param newMsgList
+     */
+    exports.onMsgNotify = function (newMsgList) {
+        var newMsg, selSess;
+        for (var j in newMsgList) {
+            newMsg = newMsgList[j];
+            // 过滤消息类型
+            if (filterMsg(newMsg) == false) {
+                selSess = newMsg.getSession();
+                webIm.setAutoRead(selSess, true, true);
+                continue;
+            }
+            exports.renderAllUnreadNum(newMsg);
+            if (newMsg.getSession().id() == params.selToID) {//为当前聊天对象的消息
+                //在聊天记录中新增一条消息
+                selSess = newMsg.getSession();
+                exports.addMsg(newMsg);
+            } else {
+                //如果新消息发送人不在我的好友列表中
+                if (newMsg.getSession().type() == webIm.SESSION_TYPE.C2C && params.myFriends[newMsg.getSession().id()] == undefined) {
+                    params.renderMyFriendCallBack = function () {
+                        params.renderMyFriendCallBack = null;
+                        exports.updateUnreadMsgNum(newMsg.getSession().id(), newMsg.getSession().type());
+                        exports.updateNewMsgList(newMsg, newMsg.getSession().id(), newMsg.getSession().type());
+                        params.myFriends[newMsg.getSession().id()].hasGetHistoryMessage = 1;
+                    };
+                    user.addFriend(newMsg.getSession().id());
+                    return;
+                } else {
+                    //更新其他聊天对象的未读消息数
+                    exports.updateUnreadMsgNum(newMsg.getSession().id(), newMsg.getSession().type());
+                }
+            }
+            exports.updateNewMsgList(newMsg, newMsg.getSession().id(), newMsg.getSession().type());
+        }
+        //消息已读上报，以及设置会话自动已读标记
+        if (selSess) webIm.setAutoRead(selSess, true, true);
+    };
+
+    /**
+     * 监听群系统消息事件
+     */
+    exports.onGroupSystemNotifys = function () {
+
+    };
+
+    /**
+     * 监听群资料变化事件
+     */
+    exports.onGroupInfoChangeNotify = function () {
+
+    };
+
+    /**
+     * 更新总未读消息数量
+     */
+    exports.renderAllUnreadNum = function (msg) {
+        if (msg.getSession().type() == webIm.SESSION_TYPE.GROUP && params.myGroup[msg.getSession().id()].SelfInfo.MsgFlag == 'AcceptNotNotify') return;
+        params.allUnreadNum += 1;
+        animate.renderAllUnreadNum(params.allUnreadNum)
+    };
+
+    /**
+     * 获取最新的群历史消息
+     */
+    exports.getLastGroupHistoryMsgs = function (GroupInfo) {
+        //如果已经获取过历史消息,直接从缓存中读取
+        if (params.myGroup[GroupInfo.GroupId].hasGetHistoryMessage == 1) {
+            event.fire('onFetchedHistoryMsgs', params.myGroup[GroupInfo.GroupId].msgList);
+            return;
+        }
+        var options = {
+            'GroupId': GroupInfo.GroupId,
+            'ReqMsgSeq': GroupInfo.NextMsgSeq - 1,
+            'ReqMsgNumber': 20
+        };
+        //如果消息为空
+        if (options.ReqMsgSeq == null || options.ReqMsgSeq == undefined || options.ReqMsgSeq <= 0) {
+            params.myGroup[GroupInfo.GroupId].hasGetHistoryMessage = 1;
+            event.fire('onFetchedHistoryMsgs', []);
+            return true;
+        }
+        webIm.syncGroupMsgs(
+            options,
+            function (msgList) {
+                params.myGroup[GroupInfo.GroupId].hasGetHistoryMessage = 1;
+                event.fire('onFetchedHistoryMsgs', msgList);
+            },
+            function (err) {
+                console.error(err.ErrorInfo);
+            }
+        );
+    };
+
+    /**
+     * 获取最新的c2c历史消息
+     */
+    exports.getLastC2CHistoryMsgs = function (profile) {
+        //如果已经获取过历史消息,直接从缓存中读取
+        if (params.myFriends[profile.account].hasGetHistoryMessage == 1) {
+            event.fire('onFetchedHistoryMsgs', params.myFriends[profile.account].msgList);
+            return;
+        }
+        var lastMsgTime = Math.round(new Date().getTime() / 1000);//默认取当前时间
+        var msgKey = '';
+        var options = {
+            'Peer_Account': profile.account, //好友帐号
+            'MaxCnt': params.reqMsgCount, //拉取消息条数
+            'LastMsgTime': lastMsgTime, //最近的消息时间，即从这个时间点向前拉取历史消息
+            'MsgKey': msgKey
+        };
+        webIm.getC2CHistoryMsgs(
+            options,
+            function (resp) {
+                params.myFriends[profile.account].hasGetHistoryMessage = 1;
+                event.fire('onFetchedHistoryMsgs', resp.MsgList);
+            },
+            function (err) {
+                console.error(err.ErrorInfo);
+            }
+        );
+    };
+
+    /**
+     * 发送消息
+     * @param msgtosend 消息内容
+     */
+    exports.sendMsg = function (msgtosend) {
+        if (!params.selToID) {
+            alert("你还没有选中好友或者群组，暂不能聊天");
+            return;
+        }
+        //获取消息内容
+        var msgLen = webIm.Tool.getStrBytes(msgtosend);
+        if (msgLen > params.maxLen) {
+            alert("消息长度超出限制(最多" + Math.round(params.maxLen / 3) + "汉字)");
+            return;
+        }
+        var selSess = new webIm.Session(params.selType, params.selToID, params.selToID, params.avatar, Math.round(new Date().getTime() / 1000));
+        var isSend = true;//是否为自己发送
+        var seq = -1;//消息序列，-1表示sdk自动生成，用于去重
+        var random = Math.round(Math.random() * 4294967296);//消息随机数，用于去重
+        var msgTime = Math.round(new Date().getTime() / 1000);//消息时间戳
+        var subType;//消息子类型
+        if (params.selType == webIm.SESSION_TYPE.C2C) {
+            subType = webIm.C2C_MSG_SUB_TYPE.COMMON;
+        } else {
+            subType = webIm.GROUP_MSG_SUB_TYPE.COMMON;
+        }
+        var msg = new webIm.Msg(selSess, isSend, seq, random, msgTime, params.loginInfo.identifier, subType, params.loginInfo.identifierNick);
+
+        var text_obj, face_obj, tmsg, emotionIndex, emotion, restMsgIndex;
+        //解析文本和表情
+        var expr = /\[[^[\]]{1,3}\]/mg;
+        var emotions = msgtosend.match(expr);
+        if (!emotions || emotions.length < 1) {
+            text_obj = new webIm.Msg.Elem.Text(msgtosend);
+            msg.addText(text_obj);
+        } else {
+
+            for (var i = 0; i < emotions.length; i++) {
+                tmsg = msgtosend.substring(0, msgtosend.indexOf(emotions[i]));
+                if (tmsg) {
+                    text_obj = new webIm.Msg.Elem.Text(tmsg);
+                    msg.addText(text_obj);
+                }
+                emotionIndex = webIm.EmotionDataIndexs[emotions[i]];
+                emotion = webIm.Emotions[emotionIndex];
+
+                if (emotion) {
+                    face_obj = new webIm.Msg.Elem.Face(emotionIndex, emotions[i]);
+                    msg.addFace(face_obj);
+                } else {
+                    text_obj = new webIm.Msg.Elem.Text(emotions[i]);
+                    msg.addText(text_obj);
+                }
+                restMsgIndex = msgtosend.indexOf(emotions[i]) + emotions[i].length;
+                msgtosend = msgtosend.substring(restMsgIndex);
+            }
+            if (msgtosend) {
+                text_obj = new webIm.Msg.Elem.Text(msgtosend);
+                msg.addText(text_obj);
+            }
+        }
+
+        webImSendMsg(msg);
+    };
+
+    function webImSendMsg(msg) {
+        webIm.sendMsg(msg, function (resp) {
+            //私聊时，在聊天窗口手动添加一条发的消息，群聊时，长轮询接口会返回自己发的消息
+            if (params.selType == webIm.SESSION_TYPE.C2C) {
+                exports.updateNewMsgList(msg, msg.getSession().id(), msg.getSession().type());
+                exports.addMsg(msg);
+            }
+        }, function (err) {
+            if (err.ErrorCode == 10017) {
+                exports.sendSystemMsg('您已被管理员禁言,请稍后再发消息')
+            }
+            console.error(err.ErrorInfo);
+        });
+    }
+
+    /**
+     * 发送系统提示消息
+     * @param message
+     */
+    exports.sendSystemMsg = function (message) {
+        animate.addSystemMsg(message);
+    };
+
+    /**
+     * 更新未读消息数量
+     * @param id
+     * @param type
+     * @param num
+     */
+    exports.updateUnreadMsgNum = function (id, type, num) {
+        switch (type) {
+            case webIm.SESSION_TYPE.C2C:
+                if (params.myFriends[id].unreadMsgNum == undefined) params.myFriends[id]['unreadMsgNum'] = 0;
+                params.myFriends[id].unreadMsgNum = (num == undefined) ? params.myFriends[id].unreadMsgNum + 1 : num;
+                break;
+            case webIm.SESSION_TYPE.GROUP:
+            default:
+                if (num == undefined) {
+                    if (params.myGroup[id].SelfInfo.MsgFlag == 'AcceptNotNotify') return;
+                    params.myGroup[id].unreadMsgNum += 1;
+                } else {
+                    params.myGroup[id].unreadMsgNum = num;
+                }
+        }
+    };
+
+    /**
+     * 更新新消息记录
+     * @param msg
+     * @param id
+     * @param type
+     */
+    exports.updateNewMsgList = function (msg, id, type) {
+        switch (type) {
+            case webIm.SESSION_TYPE.C2C:
+                var friend = params.myFriends[id];
+                if (friend != undefined)friend.newMsgList.push(msg);
+                exports.moveFriendToTop(id);
+                exports.decorateLastMsg(params.myFriends)
+                animate.renderMyFriend(params.myFriends);
+                break;
+            case webIm.SESSION_TYPE.GROUP:
+            default:
+                if (params.myGroup[id] != undefined)params.myGroup[id].newMsgList.push(msg);
+                exports.moveGroupToTop(id);
+                animate.renderMyGroup(params.myGroup);
+        }
+    };
+
+    /**
+     * 合并新消息到消息缓存
+     */
+    exports.mergeNewMsg2MsgList = function (id, type) {
+        var msgList, newMsgList;
+        switch (type) {
+            case webIm.SESSION_TYPE.C2C:
+                msgList = params.myFriends[id].msgList;
+                newMsgList = params.myFriends[id].newMsgList;
+                params.myFriends[id].newMsgList = [];
+                break;
+            case webIm.SESSION_TYPE.GROUP:
+            default:
+                msgList = params.myGroup[id].msgList;
+                newMsgList = params.myGroup[id].newMsgList;
+                params.myGroup[id].newMsgList = [];
+        }
+
+        if (newMsgList.length > 0) {
+            for (var i in newMsgList) {
+                if (!exports.hasSameMessage(msgList, newMsgList[i])) msgList.push(newMsgList[i]);
+            }
+        }
+    };
+
+    /**
+     * 是否在消息列表中有重复的消息
+     * @param msgList
+     * @param msg
+     * @returns {boolean}
+     */
+    exports.hasSameMessage = function (msgList, msg) {
+        for (var i in msgList) {
+            if (msgList[i].random == msg.random) return true;
+        }
+        return false;
+    };
+
+    /**
+     * 将收到新消息的好友移动到好友列表前面
+     * @param id
+     */
+    exports.moveFriendToTop = function (id) {
+        var friend = params.myFriends[id];
+        var tmp = {}, i;
+        delete params.myFriends[id];
+        var myFriendsArr = tools.obj2Array(params.myFriends);
+        myFriendsArr.unshift(friend);
+        for (i in myFriendsArr) {
+            tmp[myFriendsArr[i]['account']] = myFriendsArr[i];
+        }
+        params.myFriends = tmp;
+    };
+
+    /**
+     * 将收到新消息的群组移动到群组列表前面
+     * @param id
+     */
+    exports.moveGroupToTop = function (id) {
+        var group = params.myGroup[id];
+        if (group.SelfInfo.MsgFlag == 'AcceptNotNotify') return;
+        var tmp = {}, i;
+        delete params.myGroup[id];
+        var myGroupArr = tools.obj2Array(params.myGroup);
+        myGroupArr.unshift(group);
+        for (i in myGroupArr) {
+            tmp[myGroupArr[i]['GroupId']] = myGroupArr[i];
+        }
+        params.myGroup = tmp;
+    };
+
+    /**
+     * 为我的好友装饰最后一条消息
+     * @param list
+     */
+    exports.decorateLastMsg = function (list) {
+        for (var i in list) {
+            list[i].lastMsg = "";
+            if (list[i].newMsgList.length > 0) {
+                list[i].lastMsg = convertMsgtoText(list[i].newMsgList[list[i].newMsgList.length - 1]);
+            } else {
+                if (list[i].msgList.length > 0) {
+                    list[i].lastMsg = convertMsgtoText(list[i].msgList[list[i].msgList.length - 1]);
+                }
+            }
+        }
+    };
+
+    //发送图片消息
+    exports.sendPic = function (images) {
+
+        selSess = new webIm.Session(params.selType, params.selToID, params.selToID, '', Math.round(new Date().getTime() / 1000));
+        var msg = new webIm.Msg(selSess, true, -1, -1, -1, params.loginInfo.identifier, 0, '');
+        var images_obj = new webIm.Msg.Elem.Images(images.File_UUID);
+        for (var i in images.URL_INFO) {
+            var img = images.URL_INFO[i];
+            var newImg;
+            var type;
+            switch (img.PIC_TYPE) {
+                case 1://原图
+                    type = 1;//原图
+                    break;
+                case 2://小图（缩略图）
+                    type = 3;//小图
+                    break;
+                case 4://大图
+                    type = 2;//大图
+                    break;
+            }
+            newImg = new webIm.Msg.Elem.Images.Image(type, img.PIC_Size, img.PIC_Width, img.PIC_Height, img.DownUrl);
+            images_obj.addImage(newImg);
+        }
+        msg.addImage(images_obj);
+        webImSendMsg(msg);
+    }
+
+    /**
+     * 聊天记录中增加消息
+     * @param msg
+     */
+    exports.addMsg = function (msg) {
+        if (filterMsg(msg) == false) return;
+        var msgObj = {};
+        // 过滤消息类型
+        var subType = msg.getSubType();
+        msgObj.account = msg.getFromAccount();
+        msgObj.type = msg.getSession().type();
+        // 发送者账号
+        if (!msgObj.account) return;
+        // 发送者昵称
+        msgObj.nickname = msg.getFromAccountNick();
+        if (!msgObj.nickname) msgObj.nickname = msgObj.account;
+
+        //如果是私聊,用户昵称直接从我的好友获取
+        if (webIm.SESSION_TYPE.C2C == msg.getSession().type() && !msg.getIsSend()) {
+            msgObj.nickname = params.myFriends[msgObj.account].nickname;
+        }
+
+        // 发送者头像
+        msgObj.avatar = "";
+        // 发送者角色
+        msgObj.role = exports.roles[msg.fromRole];
+        // 发送时间
+        msgObj.sendTime = tools.formatTimeStamp(msg.getTime(), 'MM-dd hh:mm');
+        // 消息是否为自己发的
+        msgObj.isSelfSend = msg.getIsSend();
+        // 消息体
+        msgObj.content = convertMsgtoHtml(msg);
+        // 消息是否包含图片
+        msgObj.hasImg = contentHasImage(msg);
+        
+        if (msgObj.content === false) return;
+        if (params.preMessageSentTime == 0 || !tools.inSameMinutes(params.preMessageSentTime, msg.getTime())) {
+            animate.addSendTime(msgObj.sendTime);
+            params.preMessageSentTime = msg.getTime();
+        }
+        animate.addMsg(msgObj);
+    };
+
+
+    /**
+     * 消息是否包含图片
+     * @param msg
+     */
+    function contentHasImage(msg) {
+        var elems, elem, type, content;
+        elems = msg.getElems();//获取消息包含的元素数组
+        for (var i in elems) {
+            elem = elems[i];
+            type = elem.getType();//获取元素类型
+            content = elem.getContent();//获取元素对象
+            if (type == webIm.MSG_ELEMENT_TYPE.IMAGE) return true;
+        }
+        return false;
+    }
+
+    //把消息转换成Text
+    function convertMsgtoHtml(msg) {
+        var html = "", elems, elem, type, content;
+        elems = msg.getElems();//获取消息包含的元素数组
+        for (var i in elems) {
+            elem = elems[i];
+            type = elem.getType();//获取元素类型
+            content = elem.getContent();//获取元素对象
+            switch (type) {
+                case webIm.MSG_ELEMENT_TYPE.TEXT:
+                    html += convertTextMsgToHtml(content);
+                    break;
+                case webIm.MSG_ELEMENT_TYPE.FACE:
+                    html += convertFaceMsgToHtml(content);
+                    break;
+                case webIm.MSG_ELEMENT_TYPE.IMAGE:
+                    html += convertImageMsgToHtml(content);
+                    break;
+                case webIm.MSG_ELEMENT_TYPE.SOUND:
+                    html += convertSoundMsgToHtml(content);
+                    break;
+                case webIm.MSG_ELEMENT_TYPE.FILE:
+                    html += convertFileMsgToHtml(content);
+                    break;
+                case webIm.MSG_ELEMENT_TYPE.LOCATION://暂不支持地理位置
+                    //html += convertLocationMsgToHtml(content);
+                    break;
+                case webIm.MSG_ELEMENT_TYPE.CUSTOM:
+                    console.log(content)
+                    return false;
+                    // html += convertCustomMsgToHtml(content);
+                    break;
+                case webIm.MSG_ELEMENT_TYPE.GROUP_TIP:
+                    html += convertGroupTipMsgToHtml(content);
+                    break;
+                default:
+                    webIm.Log.error('未知消息元素类型: elemType=' + type);
+                    break;
+            }
+        }
+        return html;
+    }
+
+    function filterMsg(msg) {
+        var flag = true;
+        var subType = msg.getSubType();
+        if (subType !== webIm.C2C_MSG_SUB_TYPE.COMMON || subType !== webIm.GROUP_MSG_SUB_TYPE.COMMON) {
+            flag = false;
+        }
+        if (convertMsgtoHtml(msg) === false) {
+            flag = false;
+        }
+        return flag;
+    }
+
+    //把消息转换成Html
+    function convertMsgtoText(msg) {
+        var text = "", elems, elem, type, content;
+        elems = msg.getElems();//获取消息包含的元素数组
+        for (var i in elems) {
+            elem = elems[i];
+            type = elem.getType();//获取元素类型
+            content = elem.getContent();//获取元素对象
+            switch (type) {
+                case webIm.MSG_ELEMENT_TYPE.TEXT:
+                    text += convertTextMsgToHtml(content);
+                    break;
+                case webIm.MSG_ELEMENT_TYPE.FACE:
+                    text += convertFaceMsgToHtml(content);
+                    break;
+                case webIm.MSG_ELEMENT_TYPE.IMAGE:
+                    text += '[图片]';
+                    break;
+                case webIm.MSG_ELEMENT_TYPE.SOUND:
+                    text += '[声音]';
+                    break;
+                case webIm.MSG_ELEMENT_TYPE.FILE:
+                    text += '[文件]';
+                    break;
+                case webIm.MSG_ELEMENT_TYPE.CUSTOM:
+                    text += '[自定义消息]';
+                    break;
+                default:
+                    webIm.Log.error('未知消息元素类型: elemType=' + type);
+                    break;
+            }
+        }
+        return text;
+    }
+
+//解析文本消息元素
+    function convertTextMsgToHtml(content) {
+        return content.getText();
+    }
+
+//解析表情消息元素
+    function convertFaceMsgToHtml(content) {
+        var index = content.getIndex();
+        var data = content.getData();
+        var faceUrl = null;
+        var emotion = webIm.Emotions[index];
+        if (emotion && emotion[1]) {
+            faceUrl = emotion[1];
+        }
+        if (faceUrl) {
+            return "<img src='" + faceUrl + "'/>";
+        } else {
+            return data;
+        }
+    }
+
+//解析图片消息元素
+    function convertImageMsgToHtml(content) {
+        var smallImage = content.getImage(webIm.IMAGE_TYPE.SMALL);//小图
+        var bigImage = content.getImage(webIm.IMAGE_TYPE.LARGE);//大图
+        var oriImage = content.getImage(webIm.IMAGE_TYPE.ORIGIN);//原图
+        if (!bigImage) {
+            bigImage = smallImage;
+        }
+        if (!oriImage) {
+            oriImage = smallImage;
+        }
+        return "<img src='" + smallImage.getUrl() + "#" + bigImage.getUrl() + "#" + oriImage.getUrl() + "' style='CURSOR: pointer' id='" + content.getImageId() + "' bigImgUrl='" + bigImage.getUrl() + "'  />";
+    }
+
+//解析语音消息元素
+    function convertSoundMsgToHtml(content) {
+        var second = content.getSecond();//获取语音时长
+        var downUrl = content.getDownUrl();
+        if (webIm.BROWSER_INFO.type == 'ie' && parseInt(webIm.BROWSER_INFO.ver) <= 8) {
+            return '[这是一条语音消息]demo暂不支持ie8(含)以下浏览器播放语音,语音URL:' + downUrl;
+        }
+        return '<audio src="' + downUrl + '" controls="controls" onplay="onChangePlayAudio(this)" preload="none"></audio>';
+    }
+
+//解析文件消息元素
+    function convertFileMsgToHtml(content) {
+        var fileSize = Math.round(content.getSize() / 1024);
+        return '<a href="' + content.getDownUrl() + '" title="点击下载文件" ><i class="glyphicon glyphicon-file">&nbsp;' + content.getName() + '(' + fileSize + 'KB)</i></a>';
+
+    }
+
+//解析位置消息元素
+    function convertLocationMsgToHtml(content) {
+        return '经度=' + content.getLongitude() + ',纬度=' + content.getLatitude() + ',描述=' + content.getDesc();
+    }
+
+//解析自定义消息元素
+    function convertCustomMsgToHtml(content) {
+        var data = content.getData();//自定义数据
+        var desc = content.getDesc();//描述信息
+        var ext = content.getExt();//扩展信息
+        return "data=" + data + ", desc=" + desc + ", ext=" + ext;
+    }
+
+//解析群提示消息元素
+    function convertGroupTipMsgToHtml(content) {
+        var WEB_IM_GROUP_TIP_MAX_USER_COUNT = 10;
+        var text = "";
+        var maxIndex = WEB_IM_GROUP_TIP_MAX_USER_COUNT - 1;
+        var opType, opUserId, userIdList;
+        var groupMemberNum;
+        opType = content.getOpType();//群提示消息类型（操作类型）
+        opUserId = content.getOpUserId();//操作人id
+        switch (opType) {
+            case webIm.GROUP_TIP_TYPE.JOIN://加入群
+                userIdList = content.getUserIdList();
+                //text += opUserId + "邀请了";
+                for (var m in userIdList) {
+                    text += userIdList[m] + ",";
+                    if (userIdList.length > WEB_IM_GROUP_TIP_MAX_USER_COUNT && m == maxIndex) {
+                        text += "等" + userIdList.length + "人";
+                        break;
+                    }
+                }
+                text = text.substring(0, text.length - 1);
+                text += "加入该群，当前群成员数：" + content.getGroupMemberNum();
+                break;
+            case webIm.GROUP_TIP_TYPE.QUIT://退出群
+                text += opUserId + "离开该群，当前群成员数：" + content.getGroupMemberNum();
+                break;
+            case webIm.GROUP_TIP_TYPE.KICK://踢出群
+                text += opUserId + "将";
+                userIdList = content.getUserIdList();
+                for (var m in userIdList) {
+                    text += userIdList[m] + ",";
+                    if (userIdList.length > WEB_IM_GROUP_TIP_MAX_USER_COUNT && m == maxIndex) {
+                        text += "等" + userIdList.length + "人";
+                        break;
+                    }
+                }
+                text += "踢出该群";
+                break;
+            case webIm.GROUP_TIP_TYPE.SET_ADMIN://设置管理员
+                text += opUserId + "将";
+                userIdList = content.getUserIdList();
+                for (var m in userIdList) {
+                    text += userIdList[m] + ",";
+                    if (userIdList.length > WEB_IM_GROUP_TIP_MAX_USER_COUNT && m == maxIndex) {
+                        text += "等" + userIdList.length + "人";
+                        break;
+                    }
+                }
+                text += "设为管理员";
+                break;
+            case webIm.GROUP_TIP_TYPE.CANCEL_ADMIN://取消管理员
+                text += opUserId + "取消";
+                userIdList = content.getUserIdList();
+                for (var m in userIdList) {
+                    text += userIdList[m] + ",";
+                    if (userIdList.length > WEB_IM_GROUP_TIP_MAX_USER_COUNT && m == maxIndex) {
+                        text += "等" + userIdList.length + "人";
+                        break;
+                    }
+                }
+                text += "的管理员资格";
+                break;
+
+            case webIm.GROUP_TIP_TYPE.MODIFY_GROUP_INFO://群资料变更
+                text += opUserId + "修改了群资料：";
+                var groupInfoList = content.getGroupInfoList();
+                var type, value;
+                for (var m in groupInfoList) {
+                    type = groupInfoList[m].getType();
+                    value = groupInfoList[m].getValue();
+                    switch (type) {
+                        case webIm.GROUP_TIP_MODIFY_GROUP_INFO_TYPE.FACE_URL:
+                            text += "群头像为" + value + "; ";
+                            break;
+                        case webIm.GROUP_TIP_MODIFY_GROUP_INFO_TYPE.NAME:
+                            text += "群名称为" + value + "; ";
+                            break;
+                        case webIm.GROUP_TIP_MODIFY_GROUP_INFO_TYPE.OWNER:
+                            text += "群主为" + value + "; ";
+                            break;
+                        case webIm.GROUP_TIP_MODIFY_GROUP_INFO_TYPE.NOTIFICATION:
+                            text += "群公告为" + value + "; ";
+                            break;
+                        case webIm.GROUP_TIP_MODIFY_GROUP_INFO_TYPE.INTRODUCTION:
+                            text += "群简介为" + value + "; ";
+                            break;
+                        default:
+                            text += "未知信息为:type=" + type + ",value=" + value + "; ";
+                            break;
+                    }
+                }
+                break;
+
+            case webIm.GROUP_TIP_TYPE.MODIFY_MEMBER_INFO://群成员资料变更(禁言时间)
+                text += opUserId + "修改了群成员资料:";
+                var memberInfoList = content.getMemberInfoList();
+                var userId, shutupTime;
+                for (var m in memberInfoList) {
+                    userId = memberInfoList[m].getUserId();
+                    shutupTime = memberInfoList[m].getShutupTime();
+                    text += userId + ": ";
+                    if (shutupTime != null && shutupTime !== undefined) {
+                        if (shutupTime == 0) {
+                            text += "取消禁言; ";
+                        } else {
+                            text += "禁言" + shutupTime + "秒; ";
+                        }
+                    } else {
+                        text += " shutupTime为空";
+                    }
+                    if (memberInfoList.length > WEB_IM_GROUP_TIP_MAX_USER_COUNT && m == maxIndex) {
+                        text += "等" + memberInfoList.length + "人";
+                        break;
+                    }
+                }
+                break;
+            default:
+                text += "未知群提示消息类型：type=" + opType;
+                break;
+        }
+        return text;
+    }
+
+});

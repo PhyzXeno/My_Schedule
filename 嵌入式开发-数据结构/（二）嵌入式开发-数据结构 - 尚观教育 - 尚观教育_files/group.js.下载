@@ -1,0 +1,353 @@
+define(function (require, exports, module) {
+
+    var event = require('../libs/event.js');
+    var webIm = require('../../sdk/1.7/webim.js');
+    var params = require('./params.js');
+    var user = require('./user.js');
+    var tools = require('../../tools.js');
+
+
+    var getMyGroupListUrl = $('#myGroupList').val();
+    var quitGroupUrl = $('#quitGroupUrl').val();
+
+    /**
+     * 获取我加入的群组
+     */
+    exports.getJoinedGroup = function (callback) {
+        $.ajax({
+            url: getMyGroupListUrl,
+            type: 'POST',
+            data: {userId: params.userId},
+            success: function (groups) {
+                var groupTmp = {}, i;
+                exports.getMyGroup(function (GroupList) {
+                    for (i in GroupList) {
+                        if (groups[GroupList[i].GroupId] != undefined) {
+                            groupTmp[GroupList[i].GroupId] = GroupList[i];
+                            groupTmp[GroupList[i].GroupId]['Name'] = groups[GroupList[i].GroupId]['group_name'];
+                            groupTmp[GroupList[i].GroupId]['group_name'] = groups[GroupList[i].GroupId]['group_name'];
+                            groupTmp[GroupList[i].GroupId]['group_introduction'] = groups[GroupList[i].GroupId]['group_introduction'];
+                            groupTmp[GroupList[i].GroupId]['class_id'] = groups[GroupList[i].GroupId]['class_id'];
+                            groupTmp[GroupList[i].GroupId]['url'] = groups[GroupList[i].GroupId]['url'];
+                        }
+                    }
+                    event.fire('onFetchedGroupList', groupTmp);
+                    if (callback)callback();
+                });
+            }
+        });
+    };
+
+    /**
+     * 获取我加入的群组
+     */
+    exports.getMyGroup = function (callback) {
+        var options = {
+            'Member_Account': params.loginInfo.identifier,
+            'Limit': 1000,
+            'Offset': 0,
+            //'GroupType':'',
+            'GroupBaseInfoFilter': [
+                'Type',
+                'Name',
+                'Introduction',
+                'Notification',
+                'FaceUrl',
+                'CreateTime',
+                'Owner_Account',
+                'LastInfoTime',
+                'LastMsgTime',
+                'NextMsgSeq',
+                'MemberNum',
+                'MaxMemberNum',
+                'ApplyJoinOption'
+            ],
+            'SelfInfoFilter': [
+                'Role',
+                'JoinTime',
+                'MsgFlag',
+                'UnreadMsgNum',
+                'NameCard',
+
+            ]
+        };
+        webIm.getJoinedGroupListHigh(
+            options,
+            function (res) {
+                if (callback) {
+                    callback(res.GroupIdList);
+                }
+            },
+            function (res) {
+                console.error(res.ErrorInfo);
+            })
+    };
+
+
+    /**
+     * 获取群资料
+     * @param group_id
+     * @param callback
+     */
+    exports.getGroupInfo = function (group_id, callback) {
+        var options = {
+            'GroupIdList': [
+                group_id
+            ],
+            'GroupBaseInfoFilter': [
+                'Type',
+                'Name',
+                'Introduction',
+                'Notification',
+                'FaceUrl',
+                'CreateTime',
+                'Owner_Account',
+                'LastInfoTime',
+                'LastMsgTime',
+                'NextMsgSeq',
+                'MemberNum',
+                'MaxMemberNum',
+                'ApplyJoinOption'
+            ]
+        };
+        webIm.getGroupInfo(
+            options,
+            function (resp) {
+                if (callback) {
+                    callback(resp.GroupInfo[0]);
+                }
+            },
+            function (err) {
+                alert(err.ErrorInfo);
+            }
+        );
+    };
+
+    /**
+     * 批量获取群资料
+     * @param group_ids
+     * @param callback
+     */
+    exports.getGroupList = function (group_ids, callback) {
+        var options = {
+            'GroupIdList': group_ids,
+            'GroupBaseInfoFilter': [
+                'Type',
+                'Name',
+                'Introduction',
+                'Notification',
+                'FaceUrl',
+                'CreateTime',
+                'Owner_Account',
+                'LastInfoTime',
+                'LastMsgTime',
+                'NextMsgSeq',
+                'MemberNum',
+                'MaxMemberNum',
+                'ApplyJoinOption'
+            ]
+        };
+        webIm.getGroupInfo(
+            options,
+            function (resp) {
+                if (callback) {
+                    callback(resp.GroupInfo);
+                }
+            },
+            function (err) {
+                alert(err.ErrorInfo);
+            }
+        );
+    };
+
+    /**
+     * 获取群成员列表
+     * @param group_id
+     * @param callback
+     * @param Offset
+     * @param Limit
+     * @param members
+     */
+    exports.getMemberList = function (group_id, callback, Offset, members) {
+        if (members == undefined) members = null;
+        if (Offset == undefined) Offset = 0;
+        var options = {
+            'GroupId': group_id,
+            'Offset': Offset,
+            'Limit': 500,
+            'MemberInfoFilter': [
+                'Account',
+                'Role',
+                'JoinTime',
+                'LastSendMsgTime',
+                'ShutUpUntil',
+                'NameCard',
+            ],
+            "AppDefinedDataFilter_GroupMember": [
+                "MemberLevel"
+            ]
+        };
+        webIm.getGroupMemberInfo(
+            options,
+            function (resp) {
+                if (resp.MemberNum == 0 || resp.MemberList.length < 1) return [];
+                var ids = [], memberList = {}, i;
+                for (i in resp.MemberList) {
+                    ids.push(resp.MemberList[i].Member_Account);
+                    memberList[resp.MemberList[i].Member_Account] = resp.MemberList[i];
+                }
+                user.getUsersProfile(ids, function (data) {
+                    for (var j in data) {
+                        memberList[data[j].account].avatar = data[j].avatar;
+                        memberList[data[j].account].nickname = data[j].nickname;
+                        memberList[data[j].account].home = data[j].home;
+                        memberList[data[j].account].gender = data[j].gender;
+                    }
+                    Offset = Offset + resp.MemberList.length;
+                    if (members != null) $.extend(memberList, members);
+                    if (resp.MemberNum > Offset) {
+                        exports.getMemberList(group_id, callback, Offset, memberList);
+                    }
+                    if (callback) {
+                        memberList = sortMemberList(memberList);
+                        callback(memberList);
+                    }
+                });
+            },
+            function (err) {
+                console.log(err.ErrorInfo);
+            }
+        );
+    };
+
+    /**
+     * 修改群资料
+     * @param options
+     */
+    exports.modifyGroupInfo = function (options) {
+        // var options = {
+        //     'GroupId': '', //id
+        //     'Name':'' //群名称,
+        //     'FaceUrl': '' //群头像,
+        //     'Notification':'' //群公告,
+        //     'Introduction': '' //群简介
+        // };
+        webIm.modifyGroupBaseInfo(
+            options,
+            function (resp) {
+                event.fire('modifyGroupInfoSuccess', options.GroupId);
+            },
+            function (err) {
+                alert(err.ErrorInfo);
+            }
+        );
+    };
+
+    /**
+     * 修改群消息提示类型
+     */
+    exports.modifyGroupMsgFlag = function (group_id, msg_flag, callback) {
+        var options = {
+            'GroupId': group_id,
+            'Member_Account': params.loginInfo.identifier,
+            'MsgFlag': msg_flag
+        };
+        webIm.modifyGroupMember(
+            options,
+            function (resp) {
+                if (callback) {
+                    callback(resp);
+                }
+
+            },
+            function (err) {
+                alert(err.ErrorInfo);
+            }
+        );
+    };
+
+    /**
+     * 对聊天室成员排序
+     * @param memberList
+     * @returns {Array.<T>}
+     */
+    function sortMemberList(memberList) {
+        var nameCard6 = {};
+        var nameCard5 = {};
+        var nameCard4 = {};
+        var nameCard3 = {};
+        var nameCard2 = {};
+        var nameCard1 = {};
+        for (var i in memberList) {
+            switch (memberList[i]['NameCard']) {
+                case '5':
+                    nameCard5[memberList[i].Member_Account] = memberList[i];
+                    break;
+                case '4':
+                    nameCard4[memberList[i].Member_Account] = memberList[i]
+                    break;
+                case '3':
+                    nameCard3[memberList[i].Member_Account] = memberList[i];
+                    break;
+                case '2':
+                    nameCard2[memberList[i].Member_Account] = memberList[i];
+                    break;
+                case '6':
+                    nameCard6[memberList[i].Member_Account] = memberList[i];
+                    break;
+                case '1':
+                default :
+                    nameCard1[memberList[i].Member_Account] = memberList[i];
+            }
+        }
+
+        return $.extend({}, nameCard5, nameCard4, nameCard3, nameCard2, nameCard6, nameCard1);
+    }
+
+    exports.getFaceBackgroundColor = function (id) {
+        var code = tools.getHashCode(id);
+        return params.groupFaceColor[code % params.groupFaceColor.length];
+    };
+
+    /**
+     * 设置成员禁言时间
+     */
+    exports.forbidSendMsg = function (groupId, account, shut_up_time, callback) {
+        var options = {
+            'GroupId': groupId,//群组id
+            'Members_Account': [account],//被禁言的成员帐号列表
+            'ShutUpTime': shut_up_time//禁言时间，单位：秒
+        };
+        webIm.forbidSendMsg(
+            options,
+            function (resp) {
+                if (callback) {
+                    callback(resp);
+                }
+            },
+            function (err) {
+                alert(err.ErrorInfo);
+            }
+        );
+    };
+
+    /**
+     * 退出群组
+     * @param groupId
+     * @param callback
+     */
+    exports.quitGroup = function (groupId, callback) {
+        var classId = params.myGroup[groupId]['class_id'];
+        $.ajax({
+            url: quitGroupUrl,
+            data: {classId: classId},
+            success: function (res) {
+                if (res.status > 0) {
+                    if (callback)callback()
+                } else {
+                    alert('退出失败!')
+                }
+            }
+        })
+    }
+});

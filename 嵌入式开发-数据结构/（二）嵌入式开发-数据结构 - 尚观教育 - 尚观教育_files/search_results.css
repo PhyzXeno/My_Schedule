@@ -1,0 +1,409 @@
+body{
+	background-color: rgb(242,242,242);
+	padding: 0px;
+	margin: 0px;
+	font-family: Arial,"Microsoft YaHei","宋体";
+}
+#search_result_all{
+	width: 1170px;
+	height: auto;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 20px;
+}
+/*搜索左侧导航*/
+#navigation{
+	width: 260px;
+	list-style-type:none;
+	float: left;
+	background-color: white;
+	padding: 0px;
+	margin: 0px;
+}
+#navigation li{
+	width: 100%;
+	height: 55px;
+	line-height: 55px;
+	float: left;
+	vertical-align: middle;
+	text-indent: 1.5em;
+	color: #333;
+	border: 1px solid #dfdfdf;
+	font-size: 17px;
+	cursor: pointer;
+}
+.button_none{
+	border-bottom: none !important;
+}
+#navigation li:hover{
+	color: white;
+	background-color: #0093f0;
+	border: 1px solid #0093f0;
+}
+.li_active{
+	color: #FFFFFF !important;
+	background-color: #0093f0;
+	border: 1px solid #0093f0 !important;
+}
+/*右侧搜索显示的内容*/
+#search_result_content{
+	width: 880px;
+	height: auto;
+	float: right;
+	background-color: rgb(242,242,242);
+}
+/*本地课程*/
+#local{
+	width: 860px;
+	background-color: white;
+	height: auto;
+	border: 1px solid #dfdfdf;
+	margin-left: 10px;
+}
+#union{
+	width: 860px;
+	background-color: white;
+	height: auto;
+	border: 1px solid #dfdfdf;
+	margin-left: 10px;
+}
+#related_class{
+	width: 860px;
+	background-color: white;
+	height: auto;
+	border: 1px solid #dfdfdf;
+	margin-left: 10px;
+}
+#related_teacher{
+	width: 860px;
+	background-color: white;
+	height: auto;
+	border: 1px solid #dfdfdf;
+	margin-left: 10px;
+}
+.local_title{
+	width: 100%;
+	height: 55px;
+	line-height: 55px;
+	vertical-align: middle;
+	text-indent: 1em;
+	color: #333;
+	font-size: 17px;
+	border-bottom:1px solid #dfdfdf;
+}
+.local_content{
+	width: 100%;
+    height: auto;
+    list-style-type: none;
+    padding: 0px;
+    margin: 0px;
+    background-color: #FFFFFF;
+    overflow: hidden;
+    padding-bottom: 20px;
+}
+.related_content{
+	width: 100%;
+	/*height: 360px;*/
+	padding-bottom: 20px;
+	overflow: hidden;
+	margin-left: auto;
+	margin-right: auto;
+}
+.related_teacher_content{
+	width: 100%;
+	padding-bottom: 20px;
+	overflow: hidden;
+	margin-left: auto;
+	margin-right: auto;
+}
+.m_top{
+	margin-top: 15px;
+        margin-bottom: 15px
+}
+.more_class{
+	width: 100%;
+	height: 55px;
+	line-height: 55px;
+	vertical-align: middle;
+	text-align: center;
+	color: #333;
+	font-size: 17px;
+	border-top:1px solid #dfdfdf;
+	background-color: rgb(246,246,246);
+}
+.more_class a{
+	text-decoration: none;
+	color: #333333;
+	font-size: 14px;
+	font-weight: bold;
+	white-space: nowrap;
+}
+.more_class a:hover{
+	text-decoration: underline;
+	color: rgb(42,148,213);
+}
+
+/*课程列表样式*/
+.class_list_result_box{
+	width: 266px;
+	height: 282px;
+	float: left;
+	margin-left: 15px;
+}
+.class_list_result{
+	width: 266px;
+	height: 262px;
+	float: left;
+	margin-top: 20px;
+	cursor: pointer;
+	/*border-radius: 5px;*/
+}
+.class_list_result:hover{
+  box-shadow: 0 10px 20px #C0C0C0;
+  margin-top: 19px;
+}
+.result_img{
+	width:266px ;
+	height: 149px;
+}
+.class_result_tilte{
+	color: #000;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+    word-break: break-all;
+	height: 30px;
+	line-height: 30px;
+	width: 250px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	margin-left: 10px;
+        display: inherit
+}
+.class_result_tilte:hover{
+   text-decoration: underline;
+}
+.classTxt_module .text-normal{
+ text-overflow: -o-ellipsis-lastline;
+overflow: hidden;
+text-overflow: ellipsis;
+display: -webkit-box;
+-webkit-line-clamp: 3; 
+-webkit-box-orient: vertical;
+}
+.price_number{
+	width: 100%;
+	height: 40px;
+	line-height: 40px;
+	vertical-align: middle;
+	border-bottom: 1px dashed #dfdfdf;
+	color: #777;
+	font-size: 14px;
+}
+.baiImg{
+	width: 18px;
+	height: 15px;
+	float: left;
+	margin-left: 5px;
+	margin-top: 13px;
+}
+.number_student{
+	float: left;
+}
+.price{
+	float: right;
+	color: red;
+	margin-right: 5px;
+}
+.class_time{
+	width: 100%;
+	height: 30px;
+	line-height: 30px;
+	color: #777;
+	font-size: 14px;
+}
+.class_time_number{
+	float: left;
+	margin-left: 5px;
+}
+.class_school{
+	float: right;
+	margin-right: 5px;
+        overflow: hidden;
+         text-overflow: ellipsis;
+        white-space:nowrap;
+}
+.free{
+        color: #2bce65 !important;
+}
+/*相关班级*/
+.class_module{
+	width: 248px;
+	height: 140px;
+	border: 1px solid #dfdfdf;
+	border-radius: 3px;
+	float: left;
+	margin-top: 24px;
+	margin-left: 18px;
+	margin-right: 18px;
+}
+.img_module{
+	width: 90px;
+	height: 140px;
+	float: left;
+}
+.img_module img{
+	width: 48px;
+	height: 48px;
+	border-radius: 100%;
+	margin: 21px;
+	float: left;
+}
+
+
+.classTxt_module{
+	width: 150px;
+	height: 140px;
+	float: left;
+	font-size: 14px;
+}
+.classTxt_module span{
+    color: #777777;
+}
+.class_name{
+	width: 100%;
+	height: 20px;
+	line-height: 20px;
+	vertical-align: middle;
+	margin-top: 21px;
+}
+.class_name,.go_schooldate,.headmaster{
+	width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/*名师模块*/
+.related_teacher_module{
+	width: 262px;
+	height: 132px;
+	border: 1px solid #dfdfdf;
+	float: left;
+	margin-top: 32px;
+	margin-left: 17px;
+}
+.teacher_img{
+	width: 130px;
+	height: 132px;
+	float: left;
+}
+.teacher_img img{
+	width: 90px;
+	height: 90px;
+	border-radius: 100%;
+	margin: 23px;
+	float: left;
+}
+.teacher_name_class{
+	width: 130px;
+	float: left;
+	font-size: 14px;
+}
+.teacher_nametxt{
+	margin-top: 28px;
+	width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 18px;
+	cursor: pointer;
+	display: inherit;
+}
+.teacher_nametxt:hover{
+	text-decoration: underline;
+	color: rgb(42,148,213);
+}
+.teacher_profile{
+	width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	height: 60px;
+}
+/*暂无搜索结果*/
+.no_search_resoult{
+	width: 100%;
+	/*height: 100px;*/
+	line-height: 190px;
+	font-size: 15px;
+	vertical-align: middle;
+	text-align: center;
+        color: #999;
+}
+.no_search_resoult span{
+	color: red;
+}
+/*搜索结果全部为无*/
+#all_search_notresoult{
+	width: 860px;
+	/*height: 430px;*/
+	background-color: white;
+	border: 1px solid #dfdfdf;
+	margin-left: 10px;
+}
+#erroico{
+	width: 141px;
+	height: 141px;
+	margin-top: 38px;
+	margin-left: auto;
+	margin-right: auto;
+}
+#erroico img{
+	width: 141px;
+	height: 141px;
+	border-radius: 100%;
+	margin-left: auto;
+	margin-right: auto;
+}
+.errotxt{
+	width: 330px;
+	/*height: 35px;*/
+	line-height: 35px;
+	vertical-align: middle;
+	text-align: left;
+	font-size: 14px;
+	margin-left: auto;
+	margin-right: auto;
+}
+.errotxt  a{
+	color: rgb(42,148,213);
+}
+#errotxt{
+	font-size: 16px;
+	margin-top: 10px;
+}
+#errotxt span{
+	color: red;
+}
+/*翻页样式*/
+#flip{
+	width: 100%;
+	height: 80px;
+	line-height: 80px;
+	vertical-align: middle;
+	text-align:center;
+}
+#from_serach{
+    width: 100%;
+    height:30px;
+}
+.category-filters{
+    border:0px !important;
+}
+.check-left{
+    margin-right: 20px;
+}
