@@ -1,0 +1,395 @@
+define(function (require, exports, module) {
+
+    var animate = require('./animate.js');
+    var event = require('./libs/event.js');
+    var webIm = require('../sdk/1.7/webim.js');
+    var init = require('./model/init.js');
+    var group = require('./model/group.js');
+    var params = require('./model/params.js');
+    var message = require('./model/message.js');
+    var user = require('./model/user.js');
+
+    var debug = false;
+    var initParamsUrl = $('#initParamsUrl').val();
+
+    /**
+     * 当初始化聊天室时
+     */
+    event.subscribe('onInitIm', function () {
+        if (params.init === 0) {
+            init.getInitParams(initParamsUrl);
+            params.init = -1;
+        }
+    });
+
+    /**
+     * 当IM初始化完成
+     */
+    event.subscribe('onInitImDone', function () {
+        params.init = 1;
+        if (params.initDoneCallBack != null) {
+            params.initDoneCallBack();
+        }
+        params.initDoneCallBack = null;
+    });
+
+    /**
+     * 当获取初始化参数后
+     */
+    event.subscribe('onGetInitParams', function (data) {
+        console.warn('获取初始化参数成功');
+        params.loginInfo = {
+            sdkAppID: data.sdkAppID,
+            appIDAt3rd: data.sdkAppID,
+            identifier: data.identifier,
+            accountType: data.accountType,
+            userSig: data.userSig
+        };
+        params.userId = data.userId;
+        listeners = {
+            "onConnNotify": message.onConnNotify,
+            "jsonpCallback": message.jsonpCallback,
+            "onC2cEventNotifys": message.onC2cEventNotifys,//监听C2C系统消息通道
+            "onMsgNotify": message.onMsgNotify,
+            "onGroupSystemNotifys": message.onGroupSystemNotifys,
+            "onGroupInfoChangeNotify": message.onGroupInfoChangeNotify,
+            "onKickedEventCall":message.onKickedEventCall
+        };
+        init.updateInitProgress(20);
+        //登录webIm
+        init.Login(params.loginInfo, listeners, debug);
+    });
+
+    
+
+    /**
+     * 当登录成功后
+     */
+    event.subscribe('onLogin', function () {
+        console.warn('webIm 登录成功');
+        init.updateInitProgress(20);
+        user.getMyProfile();
+        group.getJoinedGroup();
+        user.getMyFriend();
+    });
+
+
+    /**
+     * 当"我加入的群列表"获取完成
+     * @param groupList
+     */
+    event.subscribe('onFetchedGroupList', function (groupList) {
+        console.warn('获取我加入的群列表成功');
+        for (var i in groupList) {
+            params.myGroup[groupList[i]['GroupId']] = groupList[i];
+            params.myGroup[groupList[i]['GroupId']]['unreadMsgNum'] = 0;
+            params.myGroup[groupList[i]['GroupId']]['msgList'] = [];
+            params.myGroup[groupList[i]['GroupId']]['newMsgList'] = [];
+            params.myGroup[groupList[i]['GroupId']]['hasGetHistoryMessage'] = 0;
+            params.myGroup[groupList[i]['GroupId']]['faceColor'] = group.getFaceBackgroundColor(groupList[i].GroupId);
+        }
+        init.updateInitProgress(20);
+        animate.renderMyGroup(params.myGroup);
+    });
+
+    /**
+     * 当"我的好友列表"获取完成
+     */
+    event.subscribe('onFetchedMyFriend', function (lists) {
+        console.warn('获取好友列表成功');
+        for (var i in lists) {
+            params.myFriends[lists[i]['account']] = lists[i];
+            params.myFriends[lists[i]['account']]['unreadMsgNum'] = 0;
+            params.myFriends[lists[i]['account']]['msgList'] = [];
+            params.myFriends[lists[i]['account']]['newMsgList'] = [];
+            params.myFriends[lists[i]['account']]['hasGetHistoryMessage'] = 0;
+        }
+        init.updateInitProgress(20);
+        renderMyFriend(params.myFriends);
+    });
+
+    /**
+     * 当"我的个人资料"获取完成
+     */
+    event.subscribe('onFetchedMyProfile', function (data) {
+        console.warn('获取我的个人资料成功');
+        init.updateInitProgress(20);
+        params.identifierNick = data.nickname ? data.nickname : data.account;
+        animate.renderMyProfile(data);
+    });
+
+    /**
+     * 当切换聊天对象时
+     */
+    event.subscribe('onSwitchChatObj', function (data) {
+        //如果切换对象为当前聊天对象,直接返回
+        if (params.selToID == data.id) return;
+        if (debug) console.warn('切换聊天对象', data);
+        animate.clearChatHistory();
+        webIm.MsgStore.delSessByTypeId(data.type, data.id);
+        params.preMessageSentTime = 0;
+        params.selToID = data.id + '';
+        params.selType = data.type;
+        //获取聊天对象资料与历史消息
+        if (data.type == webIm.SESSION_TYPE.C2C) {
+            if (params.myFriends[data.id] != undefined) {
+                // 渲染当前聊天的用户信息
+                animate.renderC2CProfile(params.myFriends[data.id]);
+                message.getLastC2CHistoryMsgs(params.myFriends[data.id]);
+            }
+        } else {
+            if (params.myGroup[data.id] != undefined) {
+                // 渲染当前聊天的群组信息
+                animate.renderGroupProfile(params.myGroup[data.id]);
+                message.getLastGroupHistoryMsgs(params.myGroup[data.id]);
+            } else {
+                console.error(data.id)
+                console.error(params.myGroup)
+            }
+        }
+    });
+
+    /**
+     * 当"获取历史消息"完成(c2c/group)
+     */
+    event.subscribe('onFetchedHistoryMsgs', function (msgList) {
+        message.updateUnreadMsgNum(params.selToID, params.selType, 0);
+        animate.clearSelectedActive();
+        if (params.selType == webIm.SESSION_TYPE.C2C) {
+            params.myFriends[params.selToID].msgList = msgList;
+            message.mergeNewMsg2MsgList(params.selToID, params.selType);
+            renderMyFriend(params.myFriends);
+        } else {
+            params.myGroup[params.selToID].msgList = msgList;
+            message.mergeNewMsg2MsgList(params.selToID, params.selType);
+            animate.renderMyGroup(params.myGroup);
+        }
+        // 聊天记录中添加消息
+        for (var i in msgList) {
+            params.selSess = msgList[i].getSession();
+            message.addMsg(msgList[i]);
+        }
+
+        webIm.setAutoRead(params.selSess, true, true);
+    });
+
+    /**
+     * 当发送信息时
+     */
+    event.subscribe('onSendMsg', function (msg) {
+        if (msg.length < 1) return;
+        animate.clearMessageInput();
+        message.sendMsg(msg);
+    });
+
+    /**
+     * 当点击群设置
+     */
+    event.subscribe('onClickGroupSetting', function () {
+
+        //渲染群信息
+        animate.renderGroupProfile(params.myGroup[params.selToID], '#content-setting .contact-info', 'group-setting-profile');
+
+        //获取群成员
+        group.getMemberList(params.selToID, function (memberList) {
+            animate.renderGroupMember(memberList)
+        });
+
+
+        //获取群信息
+        group.getGroupInfo(params.selToID, function (GroupInfo) {
+            $.extend(params.myGroup[params.selToID], GroupInfo);
+            animate.renderGroupSetting(params.myGroup[params.selToID])
+        })
+    });
+
+
+    /**
+     * 当私聊好友时
+     */
+    event.subscribe('onChatToFriend', function (userId) {
+        //如果用户不在我的好友列表,申请加为好友
+        if (params.myFriends[userId] == undefined) {
+            params.renderMyFriendCallBack = function () {
+                animate.showContactObj(userId, webIm.SESSION_TYPE.C2C);
+            };
+            user.addFriend(userId);
+        } else {
+            animate.showContactObj(userId, webIm.SESSION_TYPE.C2C);
+        }
+    });
+
+    /**
+     * 当修改群资料时
+     */
+    event.subscribe('modifyGroupInfo', function (option) {
+        group.modifyGroupInfo(option);
+    });
+
+
+    /**
+     * 当修改群资料时
+     */
+    event.subscribe('onUploadImg', function (images) {
+        message.sendPic(images)
+    });
+
+
+    /**
+     * 当退出聊天室
+     */
+    event.subscribe('onQuitGroup', function () {
+        group.quitGroup(params.selToID, function () {
+            //隐藏左侧面板
+            animate.fadeLeftPanel();
+            delete  params.myGroup[params.selToID];
+            params.selToID = null;
+            //刷新我的群组列表
+            animate.renderMyGroup(params.myGroup)
+        });
+    });
+
+    /**
+     * 当删除好友时
+     */
+    event.subscribe('onDeleteFriend', function (id) {
+        //隐藏左侧面板
+        if (id == params.selToID){
+            animate.fadeLeftPanel();
+            params.selToID = null;
+        }
+        delete  params.myFriends[id];
+        user.deleteFriend(id,function () {
+            animate.renderMyFriend(params.myFriends) 
+        });
+    });
+
+    /**
+     * 当修改群资料成功后
+     */
+    event.subscribe('modifyGroupInfoSuccess', function (group_id) {
+        group.getGroupInfo(group_id, function (groupInfo) {
+            $.extend(params.myGroup[group_id], groupInfo);
+            animate.renderGroupProfile(params.myGroup[group_id]);
+            animate.renderGroupProfile(params.myGroup[group_id], '#content-setting .contact-info', 'group-setting-profile');
+        });
+    });
+
+    /**
+     * 当修改群消息提示类型
+     */
+    event.subscribe('modifyGroupMsgFlag', function (option) {
+        var MsgFlag = option.MsgFlag;
+        var group_id = option.group_id;
+        group.modifyGroupMsgFlag(group_id, MsgFlag, function () {
+            params.myGroup[group_id].SelfInfo.MsgFlag = MsgFlag;
+            console.warn('设置群消息提示类型成功');
+        });
+    });
+
+    /**
+     * 当禁言用户时
+     */
+    event.subscribe('onBanUser', function (options) {
+        var shut_up_time = 30 * 24 * 60 * 60;
+        group.forbidSendMsg(params.selToID, options.userId, shut_up_time, function () {
+            message.sendSystemMsg('设置用户 [' + options.name + '] 禁言成功');
+            console.warn('设置成员禁言时间成功')
+        })
+    });
+
+    /**
+     * 当解除禁言时
+     */
+    event.subscribe('onRemoveBanUser', function (options) {
+        var shut_up_time = 1;
+        group.forbidSendMsg(params.selToID, options.userId, shut_up_time, function () {
+            message.sendSystemMsg('设置用户 [' + options.name + '] 解除禁言成功');
+            console.warn('设置成员解除成功')
+        })
+    });
+
+    /**
+     * 当好友添加成功后
+     */
+    event.subscribe('addFriendSuccess', function (userId) {
+        //刷新好友列表
+        user.getMyFriend();
+    });
+
+
+    /**
+     * 当与某个老师私聊时
+     */
+    event.subscribe('onTalkToTeacher', function (userId) {
+        animate.showImChatWindow();
+        if (userId != '') {
+            if (params.init != 1) {
+                event.fire('onInitIm');
+                params.initDoneCallBack = function () {
+                    event.fire('onChatToFriend', userId);
+                    $('.talk-to-teacher').html('<i class="fa fa-user "></i> 咨询老师').removeClass('disabled');
+
+                };
+            } else {
+                event.fire('onChatToFriend', userId);
+                $('.talk-to-teacher').html('<i class="fa fa-user "></i> 咨询老师').removeClass('disabled');
+            }
+        }
+    });
+
+    /**
+     * 当进入某个群时
+     */
+    event.subscribe('onEnterIntoGroup', function (data) {
+        animate.showImChatWindow();
+        var request_url = data.request_url;
+        if (data.group_id != '') {
+            if (params.init != 1) {
+                event.fire('onInitIm');
+                params.initDoneCallBack = function () {
+                    enterIntoGroup(data.group_id)
+                };
+            } else {
+                enterIntoGroup(data.group_id);
+            }
+            return;
+        }
+        $.ajax({
+            url: request_url,
+            type: 'get',
+            success: function (res) {
+                if (res.status > 0) {
+                    var group_id = res.info.group_id;
+                    if (params.init != 1) {
+                        event.fire('onInitIm');
+                        params.initDoneCallBack = function () {
+                            enterIntoGroup(group_id)
+                        };
+                    } else {
+                        group.getJoinedGroup(function () {
+                            enterIntoGroup(group_id);
+                        });
+                    }
+                } else {
+                    console.log(res.info)
+                }
+            }
+        })
+    });
+
+    /**
+     * 进入某个群组
+     * @param group_id
+     */
+    function enterIntoGroup(group_id) {
+        animate.showContactObj(group_id, webIm.SESSION_TYPE.GROUP);
+        $('.enter-into-im-btn').data('group_id', group_id);
+        $('.enter-into-im-btn').html('<i class="fa fa-commenting "></i> 聊天室').removeClass('disabled');
+    }
+
+    function renderMyFriend(myFriends) {
+        message.decorateLastMsg(myFriends);
+        animate.renderMyFriend(myFriends);
+    }
+});

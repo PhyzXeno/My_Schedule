@@ -1,0 +1,43 @@
+define(function (require, exports, module) {
+
+    var webIm = require('../../sdk/1.7/webim.js');
+
+    module.exports = {
+        //当前用户身份
+        loginInfo: {
+            sdkAppID: '',
+            appIDAt3rd: '',
+            identifier: '',
+            accountType: '',
+            userSig: '',
+            identifierNick: ''
+        },
+        userId: 0,                       //高校云用户id
+        init: 0,                         //是否已初始化IM 0未初始化 1已初始化 -1初始化中
+        initProcess: 0,                  //初始化进度
+        initDoneCallBack: null,          //初始化成功后回调
+        renderMyFriendCallBack: null,     //渲染好友列表回调
+        selType: webIm.SESSION_TYPE.C2C,//当前聊天类型
+        selToID: null,                  //当前选中聊天id（当聊天类型为私聊时，该值为好友帐号，否则为群号）
+        selSess: null,                  //当前聊天会话对象
+        reqMsgCount: 15,                //每次请求的历史消息(c2c/群)条数
+        maxLen: 600,                    //发送消息限制(600=200个汉字)
+        avatar: '',                     //默认好友头像
+        preMessageSentTime: 0,           //上一条消息的发送时间
+        myFriends: {},                   //我的好友
+        myGroup: {},                     //我的群组
+        allUnreadNum: 0,                  //全部未读消息数
+        maleAvatar: '/Public/assets/img/default/smallstudentAvatarMale.png',
+        femaleAvatar: 'Public/assets/img/default/smallstudentAvatarFemale.png',
+        groupFaceColor: ['#9E7CED', '#FBAD79', '#3ECCFF', '#20D39A', '#8FF0D6', '#95E2FF', '#8489BF', '#9BEA78', '#FF9AD8'],
+        nameCard: {
+            1: '学员',
+            2: '辅导老师',
+            3: '班主任',
+            4: '咨询老师',
+            5: '授课老师',
+            6: '学员'
+        }
+    };
+
+});
