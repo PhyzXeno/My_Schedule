@@ -1,0 +1,66 @@
+define(function(require, exports, module) {
+    
+    exports.run = function() {
+        setTimeout(function(){
+            try {
+                $("html,body").animate({scrollTop:$('#showlearning').offset().top-200},1000);
+            } catch (e) {
+
+            }
+        },100);
+        /* 展开收起 start fubaosheng 2015-12-23 */
+
+        window.toggleDeploy = function(item){
+            if(item.hasClass("fa-minus")) var hide = 1;
+            else var hide = 0;
+            item.removeClass("fa-plus").removeClass("fa-minus");
+            if(hide) item.addClass("fa-plus");
+            else item.addClass("fa-minus");
+
+            var id = item.parents("li.clearfix").attr("data-id");
+            $("li.clearfix").each(function(i,q){
+                var pid = $(q).attr("data-pid");
+                if(id == pid){
+                    if(hide) $(q).addClass("hide");
+                    else $(q).removeClass("hide");
+                    if($(q).hasClass("item-chapter")){
+                        var unitPid = $(q).attr("data-id");
+                        var lessonLi = $("li.clearfix[data-pid='"+unitPid+"']");
+                        if(hide) lessonLi.addClass("hide");
+                        else lessonLi.removeClass("hide");
+                    }
+                }
+            });
+        }
+
+        window.toggleHide = function(item){
+            if(item.hasClass("fa-minus")){
+                item.removeClass("fa-plus").removeClass("fa-minus");
+                item.addClass("fa-plus");
+                var id = item.parents("li.clearfix").attr("data-id");
+                $("li.clearfix").each(function(i,q){
+                    var pid = $(q).attr("data-pid");
+                    if(id == pid){
+                        $(q).addClass("hide");
+                        if($(q).hasClass("item-chapter")){
+                            var unitPid = $(q).attr("data-id");
+                            $("li.clearfix[data-pid='"+unitPid+"']").addClass("hide");
+                        }
+                    }
+                });
+            }
+        }
+
+        $(document).on("click","li.deploy",function(){
+            
+            var self = $(this).children("em");
+//            yanlei 20160630 modify 折叠互不影响
+//            $("li.deploy").children("em").not(self).each(function(index,Element){
+//                window.toggleHide($(Element));
+//            });
+            window.toggleDeploy(self);
+        })
+
+        /*  展开收起 end fubaosheng 2015-12-23  */
+    }
+});

@@ -1,0 +1,279 @@
+/*static/css/theme-color.css*/
+/*** theme-color ***/
+/*** 
+
+需要替换的颜色值：
+#187ec6   #106fb2   #428bca   #0350a6   #0b62c3   #0593d3  #0c81d4
+
+***/
+
+
+
+/*** global.css ***/
+a:hover,a:focus {color: #0062c7;}
+.btn-link:hover,.btn-link:focus {color: #0062c7;}
+.nav-tabs > li.active{border-top: 3px solid #0062c7;}
+.nav-tabs > li > a:hover, .nav-tabs > li > a:focus{color:#0062c7;}
+.nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus{color:#0062c7;}
+.nav-tabline li.active{border-bottom: 3px solid #0062c7;}
+.nav-tabline > li > a:hover, .nav-tabline > li > a:focus{color:#0062c7;}
+.nav-tabline > li.active > a, .nav-tabline > li.active > a:hover, .nav-tabline > li.active > a:focus{border: none;color:#0062c7;}
+.breadcrumb > .active {color: #0062c7;}
+
+/*** bootstrap-amend.css ***/
+.btn-wireframe{color: #0062c7;border-color: #02478e;}
+.btn-wireframe:focus,.btn-wireframe:hover{color: #0062c7;border-color: #02478e;}
+.btn-primary {background-color: #02478e;border-color: #02478e;}
+.btn-primary:focus,.btn-primary.focus {background-color: #0062c7;border-color: #0062c7;}
+.btn-primary:hover {background-color: #0062c7;border-color: #0062c7;}
+.btn-width:focus,.btn-width:hover{color: #fff;background-color: #0062c7;border-color: #0062c7;}
+
+/*** login.css ***/
+.course-tabs-sort>li>a:hover,.course-tabs-sort>li>a:focus{color: #0062c7;}
+.course-tabs-sort>li.active>a, .course-tabs-sort>li.active>a:hover, .course-tabs-sort>li.active>a:focus {color: #0062c7;}
+.yzm-layer a {background-color:#0062c7;border:1px solid #0062c7;}
+.yzm-layer a:hover {border:1px solid #0062c7;color:#0062c7;}
+.login-agree b{color:#02478e;}
+.login-register p a{color:#02478e;}
+.text-other a:hover{background:#02478e;border:1px solid #02478e;}
+
+/*** f_head_foot.css ***/
+.all-school-logo span{color:#0062c7;}
+.site-navbar .navbar-header .navbar-nav > li > a:hover,
+.site-navbar .navbar-header .navbar-nav > li > a:focus,
+.site-navbar .navbar-nav > .active > a,
+.site-navbar .navbar-nav > .active > a:hover,
+.site-navbar .navbar-nav > .active > a:focus,
+.site-navbar .navbar-nav > .open > a,
+.site-navbar .navbar-nav > .open > a:hover,
+.site-navbar .navbar-nav > .open > a:focus{
+  color: #0062c7;
+}
+.site-navbar .navbar-nav > .open.nav-second > a,
+.site-navbar .navbar-nav > .open.nav-second > a:hover,
+.site-navbar .navbar-nav > .open.nav-second > a:focus{
+    color: #fff;
+    background:#02478e;
+}
+.site-navbar .navbar-nav > .open.nav-second ul.dropdown-menu{border-color: #02478e;}
+.bg-navbar{background:#0062c7;}
+.nav-all-sort .all-navside-box ul li .department-course-box{border:1px solid #0062c7;}
+.nav-all-sort .all-navside-box ul li.active span{background:#0062c7;}
+.nav-all-sort .all-navside-box ul li .department-course-box .department-course-con h4{color:#0062c7;}
+.nav-all-sort .all-navside-box ul li .department-course-box .department-course-con h4 a:hover{color: #0062c7;}
+
+.bg-navbar .navbar-nav li.active a, 
+.bg-navbar .navbar-nav li.active a:hover,
+.bg-navbar .navbar-nav li.active a:focus,
+.bg-navbar .navbar-nav li a:focus, 
+.bg-navbar .navbar-nav li a:hover {background: #02478e;}
+.bg-navbar .navbar-nav li.active ul.dropdown-menu li a:hover,
+.bg-navbar .navbar-nav li.active ul.dropdown-menu li a:focus{
+    background: #02478e;
+}
+.nav-all-sort .all-sortbtn{background:#02478e;}
+.theme-icon{background-image:url(../../../Public/static/img/themes-icon/icon_topnav_0062c7.png);}
+@media (max-width: 767px){
+    .navbar-inverse .navbar-toggle .icon-bar {background: #0062c7;}
+    .navbar-inverse .navbar-nav .open .dropdown-menu>li>a:hover{color:#0062c7;}
+    .bg-navbar .navbar-nav li.active a, 
+    .bg-navbar .navbar-nav li.active a:hover, 
+    .bg-navbar .navbar-nav li.active a:focus, 
+    .bg-navbar .navbar-nav li a:focus, 
+    .bg-navbar .navbar-nav li a:hover {background:#0062c7;}
+    .bg-navbar .navbar-nav li a:hover,.bg-navbar .navbar-nav li.active a,.bg-navbar .navbar-nav li.active a:hover{background: #02478e;}
+    a:hover .icon-qianbao{background-image:url(../../../Public/static/img/themes-icon/icon_topnav_0062c7.png);}
+}
+
+.new-user-intro em{background-image:url(../../../Public/static/img/themes-icon/icon_userinfo_0062c7.png);}
+
+/*** index.css ***/
+.change-mobile{color:#0062c7;}
+.school-news-text span b{color:#0062c7;}
+.second-course-tit h3 b{border-bottom: 3px solid #02478e;}
+.es-box-tit h2 b{border-bottom: 3px solid #02478e;}
+.poster-box .poster-tit  h3 b{border-bottom: 3px solid #02478e;}
+.school-news-tit h3 b{border-bottom: 3px solid #02478e;}
+.flowchart-con h3 b{border-bottom: 3px solid #02478e;}
+
+.module-title h2{border-bottom: 3px solid #0062c7;}
+.module-title a:hover{color:#0062c7;}
+.course-module-list li a:hover{color:#0062c7;}
+.all-module .poster-module-list li .poster-name a:hover{color:#0062c7;}
+.all-module .teacher-module-list li .teacher-name a:hover{color:#0062c7;}
+
+.all-module .teacher-module-list li .teacher-pic .teacher-back-intro{
+    background:#0062c7;
+}
+
+/*** news.css ***/
+.zixun-body .school-news-text span b{color:#0062c7;}
+.zixun-text img {border-bottom:2px solid #0062c7;}
+.zixun-body .banner-scroll-btn span.active{color: #0062c7;}
+.rank_num {background-color: #0062c7;}
+.zixun-body .school-news-text span a:hover{color: #0062c7;}
+
+
+/*** user.css ***/
+.userpage-header-info h1 small {color: #0062c7;}
+
+
+/*** poster.css ***/
+.poster-sort a.active,.poster-sort a:hover{color: #0062c7;}
+.poster-handle span a:hover{color: #0062c7;}
+.poster-handle span a:hover span{color: #0062c7;} 
+.p-delete-btn{background: #0062c7;}
+.p-delete-btn:hover{background: #02478e;}
+.poster-sift a.active{border-bottom: 2px solid #0062c7;color:#0062c7;}
+.tareabtn .issuebtn,.visitors-login span a{background:#0062c7;}
+.tareabtn .issuebtn:hover,.visitors-login span a:hover{background:  #02478e;}
+.discuss-body .userinfo .u-name{color:#0062c7;}
+.nickname a.exitbtn{color:#0062c7;}
+.nickname a.exitbtn:hover{color: #02478e;}
+
+
+/*** class.css ***/
+.user-like a i.glyphicon-heart{color: #0062c7;}
+.class-second-tab li.active a{color:#0062c7;}
+
+
+/*** my-cloud.css ***/
+.list-group-box .list-group-item.active,.list-group-box .list-group-item.active:hover,.list-group-box .list-group-item.active:focus{color: #0062c7;}
+.list-group-box .list-group-item:hover,.list-group-box .list-group-item:focus{color: #0062c7;}
+.list-group-box .list-group-item.active,.list-group-box .list-group-item.active:hover,.list-group-box .list-group-item.active:focus{border-left:3px solid #0062c7;}
+.my-teaching-list li .cc-course-tit a.cc-course-name:hover{color: #0062c7;}
+.c-panel-heading span{color: #0062c7;}
+.c-panel-heading .c-set-tabs>li.active{border-bottom:2px solid #0062c7;}
+.c-panel-heading .c-set-tabs>li.active>a{color:#0062c7;}
+.t-course-text a.c-icon-edit{color: #0062c7;}
+.btn-choose .active,.btn-choose .a-choose:hover{color:#0062c7;border:1px solid #0062c7;}
+.btn-choose .active em{color:#0062c7;}
+.panel-col .cc-found-content .c-add-img a:hover{border:1px solid #0062c7;}
+.set-sort-popupcon .sort-all-border a.hover, .set-sort-popupcon .sort-all-border a.active { background: #0062c7;}
+.panel-col .cc-found-nav>li>a:hover{color:#0062c7;}
+.panel-col .cc-found-nav>li.active>a em,.panel-col .cc-found-nav>li>a:hover em{color:#0062c7;border:1px solid #0062c7;}
+.panel-col .cc-found-content .c-found-succeed{color:#0062c7;}
+.panel-col .cc-found-content .c-found-succeed .c-icon-success{color:#0062c7;}
+.panel-col .cc-found-content .c-other-set p a.btn:hover{background:#0062c7;}
+.s-number{background: #0062c7;}
+.t-discuss-tab a.active {border-bottom: 2px solid #0062c7;color: #0062c7;}
+.testpaper-card .panel-body .have-pro {border: 2px solid #0062c7;}
+.nav-pills>li.active{border-bottom: 2px solid #0062c7;}
+.nav-pills>li>a:hover{color:#0062c7;}
+.nav-pills>li.active>a, .nav-pills>li.active>a:hover, .nav-pills>li.active>a:focus{color: #0062c7;}
+.list-group-heading{background: #02478e;}
+.phone-btn{color:#02478e;}
+.controls .tk-radio .fa-dot-circle-o,.controls .tk-radio .fa-circle-o{color:#02478e;}
+.list-group-box .list-group-item em,.list-group-con .list-group-item .my-zh-text i{background-image:url(../../../Public/static/img/themes-icon/icon_leftnav_0062c7.png);}
+
+.exchange-course span em{color: #0062c7;}
+.table-text i.fa{color: #0062c7;}
+.file-uploader-con p i{color:#0062c7;}
+.countdown span{color:#0062c7;}
+.countdown .btn-wireframe:hover{background:#0062c7;}
+.sector-example .y-check-txt .example-txt1{background: #02478e;}
+.sector-example .y-check-txt .example-txt2,.sector-example .y-check-txt .example-txt3{color:#02478e;}
+.sector-example .all-check-txt .example-txt1{border:2px solid #02478e;}
+.video-chooser-playback-file i.fa{color:#0062c7;}
+.data-filter li:hover{background-color:#02478e;}
+.statistics-course-list li{background-color: #0062c7;}
+.statistics-course-list li.active{color:#0062c7;}
+
+/*** course.css ***/
+.course-category .all-sortbtn{background:#02478e;}
+.course-category .all-navside-box ul li.active span,.course-category .all-navside-box ul li:hover span{border-left:3px solid #0062c7;}
+.course-category .all-navside-box ul li .department-course-box a:hover{color:#0062c7;}
+.course-category .all-navside-box ul li .department-course-box .department-course-con h4{color:#0062c7;}
+.course-category .all-navside-box ul li .department-course-box .department-course-con h4 a:hover{color:#0062c7;}
+.course-category .all-navside-box ul li.active span{border-left: 3px solid #0062c7;}
+.course-category .all-navside-box ul li.active span a{color:#0062c7;}
+.category-filters-rt a:hover {color: #0062c7;}
+.category-filters-rt a.selected {color: #0062c7;border-bottom:2px solid #0062c7;}
+.course-wide-list .teacher-nickname:hover{color: #0062c7;}
+.c-info-txt .progress-text span {color:#0062c7;}
+.c-share-con span {font-size:14px;color:#0062c7;}
+.c-share-con .c-share-box {background-color:#0062c7;}
+.lesson-list .item-content i.fa {color:#0062c7;}
+.lesson-list .item-content i.fa-play-circle-o,.lesson-list .item-content i.fa-picture-o,.lesson-list .item-content i.fa-file-powerpoint-o,.lesson-list .item-content i.fa-file-word-o {color:#0062c7;}
+.lesson-list em.fa-minus,.fa-plus,.fa-adjust,.fa-circle-o,.fa-circle {color:#0062c7;}
+.lesson-dashboard .toolbar-nav-stacked li.active a {background-color: #0062c7;}
+.livechat-first h2{color: #0062c7;}
+.c-livechat-list .livechat-first .livechat-content i.ico-yuan{color: #0062c7;}
+.c-livechat-list .livechat-first .livechat-content .live-text-tit{color: #0062c7;}
+.c-livechat-list .livechat-first .livechat-content .live-time{color: #0062c7;}
+
+.live-course-teacher em{color: #0062c7;}
+.live-course-con .live-course-time{color: #0062c7;}
+
+.lesson-list .item-content i.unity-link{background-image: url(../../../Public/static/img/themes-icon/icon_topnav_0062c7.png)}
+.lesson-list .item-content i.test-picture{background-position:0 0}
+.lesson-list .item-content i.test-video{background-position:0px -22px}
+.lesson-list .item-content i.test-room{background-position:0px -44px}
+.lesson-list .item-content i.test-word{background-position:0px -66px}
+
+.live-lately-sort a.active{background: #0062c7;}
+.live-success-popupbox h3 i{color: #0062c7;}
+
+
+@media (min-width: 992px){
+    .course-category .all-navside-box ul li .department-course-box{border:1px solid #0062c7;}
+    .course-category .all-navside-box ul li .department-course-box{border:1px solid #0062c7;}
+    .course-category .all-navside-box ul li:hover span{border-top:1px solid #0062c7;border-bottom:1px solid #0062c7;}
+    .course-category .all-navside-box ul li.active span a{color:#0062c7;}
+}
+@media (max-width: 991px){
+    .course-category .all-navside-box ul li{border:1px solid #0062c7;}
+    .course-category .all-navside-box ul li.active span i{color:#0062c7;}
+    .course-category .all-navside-box ul li.active span a{color:#0062c7;}
+}
+
+.lesson-list .item-content i.test-picture,.lesson-list .item-content i.test-word,.lesson-list .item-content i.test-room,.lesson-list .item-content i.test-video
+{width:21px;height:18px;margin:10px 10px 0 10px;background: url(../../../Public/static/img/themes-icon/icon_testroom_0062c7.png) no-repeat;}
+
+
+.video-chooser-playback-file i.fa{color:#0062c7;}
+
+/*     图标主题颜色   */ 
+.fa-theme-color{color:#0062c7}
+
+/*** 定制需求--特色平台 ***/
+.feature-bar i,.feature-bar span{color: #0062c7;}
+.feature-list li{border: 1px solid #0062c7;}
+.feature-list li .featurelist-left{background: #0062c7;}
+.feature-list li .featurelist-right a{color:#0062c7;}
+.feature-list li .featurelist-right a:hover{color:#02478e;}
+.feature-list li .featurelist-right span{color:#0062c7;}
+
+
+/*** CLOUD--SERVE-STYLE ***/
+.serve-flow .serve-flow-block {background-color:#0062c7;}
+.serve-flow .serve-flow-block.active{border:1px solid #0062c7;color:#0062c7;}
+.serve-flow i{color:#0062c7;}
+.serve-table-box{border:1px solid #0062c7;background-color:#0062c7;}
+.serve-chart-text .serve-chart-left h2{color:#0062c7;}
+.serve-chart-text .serve-chart-left h2 a{color:#0062c7;}
+.server-interview .server-interview-pingjia h2,.server-interview .server-interview-text h2{color: #0062c7;}
+.serve-jieduan-table table tr td p{color:#0062c7;}
+.serve-jieduan-table table tr td em{color:#0062c7;}
+.serve-jieduan-table table tr td a.serve-jieduan-btn{border:1px solid #0062c7;color:#0062c7;}
+.serve-jieye-input span label i{color:#0062c7;}
+.serve-jieye-input span label em{color:#0062c7;}
+.third-nav li.active a{color: #0062c7;}
+.c-td-left span.flow-doing{color: #0062c7;}
+.serve-bg-border{border-top: 1px solid #0062c7;}
+.serve-add-btn a{border:1px solid #0062c7;color:#0062c7;}
+.serve-bm-btn span a.serve-bm-down{border:1px solid #0062c7;color:#0062c7;}
+.serve-bm-btn span i{color:#0062c7;}
+.serve-bm-btn span a.active{color:#0062c7;}
+.serve-job-btn a i{color:#0062c7;}
+.serve-job-btn a.active{color:#0062c7;}
+.serve-job-tit p a{border:1px solid #0062c7;color:#0062c7;}
+.serve-peizhi-nav li.active a{color:#0062c7;}
+.serve-peizhi-table tr td a,.serve-peizhi-table tr td b{color:#0062c7;}
+.serve-peizhi-table tr td.serve-already{color:#0062c7;}
+.serve-pz-text .serve-pz-btn span a.btn-select{border:1px solid #0062c7;color:#0062c7;}
+.serve-pz-text .serve-pz-btn span label a.active{color:#0062c7;}
+.serve-pz-list ul li i{color:#0062c7;}
+.serve-mating-course p i{color:#02478e;}
+.serve-input span.serve-tit-text i{color:#02478e;}
+

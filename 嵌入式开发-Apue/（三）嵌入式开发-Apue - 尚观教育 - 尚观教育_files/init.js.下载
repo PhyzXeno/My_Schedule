@@ -1,0 +1,48 @@
+define(function (require, exports, module) {
+
+    var webIm = require('../../sdk/1.7/webim.js');
+    var event = require('../libs/event.js');
+    var params = require('./params.js');
+    var animate = require('../animate.js');
+
+    /**
+     * 获取初始化参数
+     * @param initParamsUrl
+     */
+    exports.getInitParams = function (initParamsUrl) {
+        $.ajax({
+            url: initParamsUrl,
+            type: 'GET',
+            success: function (response) {
+                if (response.status == 1) {
+                    event.fire('onGetInitParams', response.info);
+                } else {
+                    console.error('获取初始化参数失败: 用户未登录')
+                }
+            }
+        })
+    };
+
+    /**
+     * webIm登录
+     */
+    exports.Login = function (loginInfo, listeners, debug) {
+        webIm.login(loginInfo, listeners, {isLogOn: debug}, function () {
+            event.fire('onLogin')
+        });
+    }
+
+
+    /**
+     * 更新IM初始化进度
+     * @param num
+     */
+    exports.updateInitProgress = function (num) {
+        params.initProcess += num;
+        // animate.radialObj.animate(params.initProcess);
+        if ( params.initProcess == 100) {
+            event.fire('onInitImDone');
+        }
+    }
+
+});

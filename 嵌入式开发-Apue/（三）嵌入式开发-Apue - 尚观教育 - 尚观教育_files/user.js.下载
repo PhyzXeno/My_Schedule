@@ -1,0 +1,263 @@
+define(function (require, exports, module) {
+
+    var webIm = require('../../sdk/1.7/webim.js');
+    var params = require('./params.js');
+    var event = require('../libs/event.js');
+
+    /**
+     * 获取我的好友
+     */
+    exports.getMyFriend = function () {
+        var options = {
+            'From_Account': params.loginInfo.identifier,
+            'TimeStamp': 0,
+            'StartIndex': 0,
+            'LastStandardSequence': 0,
+            "TagList": [
+                "Tag_Profile_IM_Nick",//昵称
+                "Tag_Profile_IM_Gender",//性别
+                "Tag_Profile_IM_Image",//头像
+                "Tag_Profile_IM_SelfSignature",//个性签名
+            ]
+        };
+        webIm.getAllFriend(options, function (response) {
+            var lists = [];
+            for (var i in response.InfoItem) {
+                var InfoItem = response.InfoItem[i];
+                var tmp = formatProfile(InfoItem.SnsProfileItem);
+                tmp['account'] = InfoItem.Info_Account;
+                lists[i] = tmp;
+            }
+            event.fire('onFetchedMyFriend', lists);
+        }, function (res) {
+            console.error(res.ErrorInfo);
+        })
+    };
+
+
+    /**
+     * 设置个人资料
+     */
+    exports.setProfile = function () {
+
+        var options = {
+            'From_Account': params.loginInfo.identifier,
+            'ProfileItem': [
+                {
+                    "Tag": "Tag_Profile_IM_Nick",
+                    "Value": "奥巴马"
+                },
+                {
+                    "Tag": "Tag_Profile_IM_Gender",
+                    "Value": "Gender_Type_Male"
+                },
+                {
+                    "Tag": "Tag_Profile_IM_Image",
+                    "Value": 'http://www.wyzc.com/Public/assets/img/default/largestudentAvatarMale.png'
+                },
+                {
+                    "Tag": "Tag_Profile_IM_SelfSignature",
+                    "Value": '努力就有收获'
+                },
+            ]
+        };
+        webIm.setProfilePortrait(
+            options,
+            function (resp) {
+                console.warn('设置个人资料成功');
+            },
+            function (err) {
+                console.error(err.ErrorInfo);
+            }
+        );
+    };
+
+    /**
+     * 获取我的个人资料
+     */
+    exports.getMyProfile = function () {
+        var tag_list = [
+            "Tag_Profile_IM_Nick",
+            "Tag_Profile_IM_Gender",
+            "Tag_Profile_IM_Image",
+            "Tag_Profile_IM_SelfSignature"
+        ];
+        var options = {
+            'From_Account': params.loginInfo.identifier,
+            'To_Account': [params.loginInfo.identifier],
+            'LastStandardSequence': 0,
+            'TagList': tag_list
+        };
+        webIm.getProfilePortrait(options, function (response) {
+            var profile = response.UserProfileItem[0].ProfileItem;
+            profile = formatProfile(profile);
+
+            event.fire('onFetchedMyProfile', profile)
+        }, function (err) {
+            console.error(err.ErrorInfo);
+        })
+    };
+
+    /**
+     * 获取用户的个人资料
+     * @param identifier
+     * @param callback
+     */
+    exports.getUserProfile = function (identifier, callback) {
+        var tag_list = [
+            "Tag_Profile_IM_Nick",
+            "Tag_Profile_IM_Gender",
+            "Tag_Profile_IM_Image",
+            "Tag_Profile_IM_SelfSignature"
+        ];
+        var options = {
+            'From_Account': params.loginInfo.identifier,
+            'To_Account': [identifier],
+            'LastStandardSequence': 0,
+            'TagList': tag_list
+        };
+        webIm.getProfilePortrait(options, function (response) {
+            var profile = response.UserProfileItem[0].ProfileItem;
+            profile = formatProfile(profile);
+            profile['account'] = identifier;
+            if (callback) {
+                callback(profile);
+            }
+        }, function (err) {
+            console.error(err.ErrorInfo);
+        })
+    };
+
+    /**
+     * 批量获取用户的个人资料
+     * @param ids array
+     * @param callback
+     */
+    exports.getUsersProfile = function (ids, callback) {
+        var tag_list = [
+            "Tag_Profile_IM_Nick",
+            "Tag_Profile_IM_Gender",
+            "Tag_Profile_IM_Image",
+            "Tag_Profile_IM_SelfSignature"
+        ];
+        var options = {
+            'From_Account': params.loginInfo.identifier,
+            'To_Account': ids,
+            'LastStandardSequence': 0,
+            'TagList': tag_list
+        };
+        webIm.getProfilePortrait(options, function (response) {
+            var profiles = [], profile;
+            if (response.UserProfileItem.length > 0) {
+                for (var i in response.UserProfileItem) {
+                    profile = response.UserProfileItem[i].ProfileItem;
+                    profile = formatProfile(profile);
+                    profile['account'] = response.UserProfileItem[i].To_Account;
+                    profiles.push(profile);
+                }
+                if (callback) {
+                    callback(profiles);
+                }
+            }
+
+        }, function (err) {
+            console.error(err.ErrorInfo);
+        })
+    };
+
+    /**
+     * 格式化个人资料
+     * @param ProfileItem
+     * @returns {{account: string, nickname: string, gender: string, avatar: string, title: string}}
+     */
+    function formatProfile(ProfileItem) {
+        var obj = {
+            account: '',
+            nickname: '',
+            gender: '',
+            avatar: '',
+            home: ''
+        };
+        for (var j in ProfileItem) {
+            switch (ProfileItem[j]['Tag']) {
+                case "Tag_Profile_IM_Nick":
+                    obj.nickname = ProfileItem[j]['Value'];
+                    break;
+                case "Tag_Profile_IM_Gender":
+                    obj.gender = ProfileItem[j]['Value'];
+                    break;
+                case "Tag_Profile_IM_Image":
+                    obj.avatar = ProfileItem[j]['Value'];
+                    break;
+                case"Tag_Profile_IM_SelfSignature":
+                    obj.home = ProfileItem[j]['Value'];
+                    obj.home = obj.home.replace(/^\./,'');
+                    break;
+            }
+        }
+
+        if (obj.avatar.length < 1) {
+            obj.avatar = obj.gender == "Gender_Type_Male" ? params.maleAvatar : params.femaleAvatar;
+        }
+
+        return obj;
+    }
+
+    /**
+     * 添加好友
+     * @param userId
+     */
+    exports.addFriend = function (userId) {
+        var add_friend_item = [
+            {
+                'To_Account': userId,
+                "AddSource": "AddSource_Type_Unknow",
+                "AddWording": '' //加好友附言，可为空
+            }
+        ];
+        var options = {
+            'From_Account': params.loginInfo.identifier,
+            'AddFriendItem': add_friend_item
+        };
+        webIm.applyAddFriend(
+            options,
+            function (resp) {
+                event.fire('addFriendSuccess', userId)
+            },
+            function (err) {
+                console.log(err.ResultItem[0]['ResultCode']);
+                if(err.ResultItem[0]['ResultCode'] == 30520){//如果请求添加的好友已经是自己的好友了
+                    event.fire('addFriendSuccess', userId)
+                }else{
+                    console.log(err.ErrorInfo);
+                }
+            }
+        );
+    };
+
+    /**
+     * 删除好友
+     * @param userId
+     * @param callback
+     */
+    exports.deleteFriend = function (userId,callback) {
+        var options = {
+            'From_Account': params.loginInfo.identifier,
+            'To_Account': [userId],
+            //Delete_Type_Both'//单向删除："Delete_Type_Single", 双向删除："Delete_Type_Both".
+            'DeleteType': 'Delete_Type_Both'
+        };
+
+        webIm.deleteFriend(
+            options,
+            function (resp) {
+                console.warn('删除好友成功');
+                if(callback) callback();
+            },
+            function (err) {
+                console.error(err.ErrorInfo);
+            }
+        );
+    }
+
+});

@@ -1,0 +1,655 @@
+define(function (require, exports, module) {
+
+    var template = require('./libs/art-template.js');
+    // require('./libs/radialIndicator.js');
+    var event = require('./libs/event.js');
+    require('./libs/jquery-valuechange.js');
+    var tools = require('../tools.js');
+    var webIm = require('../sdk/1.7/webim.js');
+    var user = require('./model/user.js');
+    var group = require('./model/group.js');
+    var params = require('./model/params.js');
+    require('./model/send_pic.js');
+
+    // 当IM展开按钮点击时
+    $(".im-toggle-bar").on("click", function () {
+        exports.showImChatWindow();
+        event.fire('onInitIm');
+    });
+
+    // 展开IM窗口
+    exports.showImChatWindow = function () {
+        $(".im-chat-window").fadeIn(300);
+        if (!params.selToID) {
+            exports.fadeLeftPanel();
+        }
+        //初始化进度条
+        // $('#indicatorContainer').radialIndicator({
+        //     barColor: '#87CEEB',
+        //     barWidth: 5,
+        //     initValue: 0,
+        //     roundCorner : true,
+        //     percentage: true
+        // });
+        // exports.radialObj = $('#indicatorContainer').data('radialIndicator');
+    };
+
+    var time = 0;
+
+    function msgNotify(is_reset) {
+        if (is_reset == true) time = 0;
+        $(".im-toggle-bar").addClass("msg-notify");
+        setTimeout(function () {
+            if (time < 3) {
+                $(".im-toggle-bar").removeClass("msg-notify");
+                setTimeout(function () {
+                    msgNotify(false);
+                }, 500);
+            }
+        }, 500);
+        time++;
+    }
+
+    //msgNotify(true);
+
+
+    // 隐藏进度条
+    exports.loadingHide = function () {
+        $('#indicatorContainer').fadeOut();
+    };
+
+    // 折叠
+    $(".im-chat-window").on("click", ".bg-down", function () {
+        $(".im-chat-window").fadeOut(300);
+        params.allUnreadNum = 0;
+        exports.renderAllUnreadNum(params.allUnreadNum)
+    });
+
+    // 展开、折叠 联系人
+    $(".im-chat-window").on("click", ".contact-header", function () {
+        if ($(this).find("i").hasClass("glyphicon-triangle-bottom")) {
+            $(this).find("i").removeClass("glyphicon-triangle-bottom").addClass("glyphicon-triangle-top");
+            $(this).siblings().slideUp(300);
+        }
+        else {
+            $(this).find("i").removeClass("glyphicon-triangle-top").addClass("glyphicon-triangle-bottom");
+            $(this).siblings().slideDown(300);
+        }
+    });
+
+    // 聊天记录 左键用户名
+    $(".im-chat-window").on("mouseup", ".msg-username", function (e) {
+        if (1 == e.which) {
+            $(".right-menus").hide();
+            if ($(this).parent().siblings().last().find('li').length > 0) {
+                $(this).parent().siblings().last().show();
+            }
+            return false;
+        }
+    });
+
+    // 用户设置 左键用户头像
+    $(".im-chat-window").on("mouseup", ".groupUserList-item", function (e) {
+        if (1 == e.which) {
+            $('.groupUserList-item').find('.right-menus').hide();
+            if ($(this).find('.right-menus').find('li').length > 0) {
+                $(this).find('.right-menus').show();
+            }
+            return false;
+        }
+    });
+
+    // 取消右键菜单
+    $(".im-chat-window").on("mouseup", function () {
+        $(".im-chat-window .right-menus").hide();
+        return false;
+    });
+
+    //关闭 @AT 提示
+    $(".im-chat-window").on("click", ".msg-cue .fa-times", function () {
+        $(this).parent().hide();
+    });
+
+    //群设置
+    $(".im-chat-window").on("click", ".glyphicon-cog", function () {
+        $("#content-info").hide();
+        $("#content-setting").show();
+        $('.search-group').show();
+        // 群设置，显示群成员，隐藏消息设置
+        $("#groupUserList").show();
+        $("#groupSetting").hide();
+        $(".seting-tab span").removeClass("active");
+        $(".seting-tab span").eq("0").addClass("active");
+        exports.onClickGroupSetting();
+    });
+
+    //返回群成员
+    $(".im-chat-window").on("click", ".contact-info .btn-primary", function () {
+        $("#content-info").show();
+        $("#content-setting").hide();
+    });
+
+    // 群成员、群设置切换
+    $(".im-chat-window").on("click", ".seting-tab span.set", function () {
+        $(this).addClass("active").siblings().removeClass("active");
+        if ($(this).html() == "群成员") {
+            $('.search-group').show();
+            $("#groupUserList").show();
+            $("#groupSetting").hide();
+        }
+        else {
+            $('.search-group').hide();
+            $("#groupUserList").hide();
+            $("#groupSetting").show();
+        }
+    });
+
+
+    // 选择表情
+    var emoteFlag = true;
+
+    $(".icon-expression").on("click", function () {
+        if (emoteFlag) {
+            exports.showEmote();
+        } else {
+            exports.hideEmote();
+
+        }
+        return false;
+    });
+
+    /**
+     * 展开表情栏
+     */
+    var showEmoteFlag = false;
+    exports.showEmote = function () {
+        if (!showEmoteFlag) {
+            var emotionPicData = webIm.EmotionPicData;
+            for (var key in emotionPicData) {
+                var emotions = $('<img>').attr({
+                    "id": emotionPicData[key][0],
+                    "src": emotionPicData[key][1],
+                    "style": "cursor:pointer;",
+                    "title": emotionPicData[key][0]
+                }).click(function () {
+                    //触发点击表情事件
+                    selectEmotionImg(this);
+                });
+                $('<li>').append(emotions).appendTo($('#emotionUL'));
+            }
+            showEmoteFlag = true;
+        }
+        $(".im-chat-window .input-tools-emote").slideDown(200);
+        emoteFlag = false;
+    };
+
+    /**
+     * 隐藏表情栏
+     */
+    exports.hideEmote = function () {
+        $(".im-chat-window .input-tools-emote").slideUp(200);
+        emoteFlag = true;
+    };
+
+    /**
+     * 选择表情
+     * @param ele
+     */
+    function selectEmotionImg(ele) {
+        $('#message-input').val($('#message-input').val() + ele.id);
+        $('#message-input').focus();
+        exports.hideEmote()
+    }
+
+
+    /**
+     * 当进入授课班聊天室
+     */
+    $(document).on('click', '.enter-into-im-btn', function () {
+        var request_url = $(this).data('url');
+        if ($(this).hasClass('disabled')) return;
+        $(this).text('进入中...').addClass('disabled');
+        var data = {request_url: request_url, group_id: $(this).data('groupId')};
+        event.fire('onEnterIntoGroup', data);
+    });
+
+    /**
+     * 当点击咨询老师按钮时
+     */
+    $(document).on('click', '.talk-to-teacher', function () {
+        var userId = $(this).data('teacher');
+        if ($(this).hasClass('disabled')) return;
+        $(this).text('联系中...').addClass('disabled');
+        event.fire('onTalkToTeacher', userId);
+    });
+
+    /**
+     * 隐藏左侧面板
+     */
+    exports.fadeLeftPanel = function () {
+        $('.im-content').hide();
+        $('.content-name').hide();
+        $('.des').hide();
+    };
+
+    /**
+     * 显示左侧面板
+     */
+    exports.showLeftPanel = function () {
+        $('.im-content').show();
+        $('.content-name').show();
+        $('.des').show();
+    };
+
+    /**
+     * 渲染我的群列表
+     * @param groupList.
+     */
+    var myGroupList = '#my-group-list';
+    exports.renderMyGroup = function (groupList) {
+        var length = tools.objLength(groupList);
+        var selToID = params.selToID;
+        var data = {
+            list: groupList,
+            length: length,
+            selToID: selToID
+        };
+        var html = template('my-group', data);
+        $(myGroupList).html(html)
+    };
+
+    /**
+     * 渲染我的好友列表
+     * @param list
+     */
+    var myFriendList = '#my-friend-list';
+    exports.renderMyFriend = function (list) {
+        var length = tools.objLength(list);
+        var selToID = params.selToID;
+        var data = {
+            list: list,
+            length: length,
+            selToID: selToID
+        };
+        var html = template('my-friend', data);
+        $(myFriendList).html(html);
+        if (params.renderMyFriendCallBack != null) {
+            params.renderMyFriendCallBack();
+            params.renderMyFriendCallBack = null;
+        }
+    };
+
+    /**
+     * 渲染我的个人资料
+     * @param data
+     */
+    var myProfile = '#my-profile-info';
+    exports.renderMyProfile = function (data) {
+        var html = template('my-profile', data);
+        $(myProfile).html(html)
+    };
+
+    /**
+     * 渲染header
+     * @param data
+     */
+    var header = '.im-chat-window .header';
+    exports.renderHeader = function (title, desc) {
+        var data = {
+            title: title,
+            desc: desc
+        };
+        var html = template('head', data);
+        $(header).html(html)
+    };
+
+
+    /**
+     * 当点击聊天对象(群/私聊)时
+     */
+    $(document).on('click', '.contact-item', function () {
+        var id = $(this).data('id');
+        var type = $(this).data('type');
+        exports.showContactObj(id, type);
+    });
+
+    /**
+     * 打开聊天对象
+     * @param id
+     * @param type
+     */
+    exports.showContactObj = function (id, type) {
+        exports.showLeftPanel();
+        event.fire('onSwitchChatObj', {id: id, type: type});
+        $("#content-setting").hide();
+        $("#content-info").show();
+    };
+
+    /**
+     * 清空所有聊天对象的选中状态
+     */
+    exports.clearSelectedActive = function () {
+        $('.contact-item').removeClass('active');
+    };
+
+    /**
+     * 渲染当前聊天的群组信息
+     * @param groupInfo
+     */
+    var contactInfo = '#content-info .contact-info';
+    exports.renderGroupProfile = function (groupInfo, container, templateId) {
+        if (container == undefined) container = contactInfo;
+        if (templateId == undefined) templateId = 'group-profile';
+        var title = groupInfo.Name;
+        var desc = groupInfo.Notification;
+        exports.renderHeader(title, desc);
+        var html = template(templateId, groupInfo);
+        $(container).html(html)
+    };
+
+    /**
+     * 渲染当前聊天的用户信息
+     * @param profile
+     */
+    exports.renderC2CProfile = function (profile) {
+        var title = profile.nickname;
+        var desc = '';
+        exports.renderHeader(title, desc);
+        var html = template('c2c-profile', profile);
+        $(contactInfo).html(html)
+    };
+
+    /**
+     * 渲染底部未读消息数量
+     * @param profile
+     */
+    var allUnreadNum = '.all-unread-num';
+    exports.renderAllUnreadNum = function (unreadnum) {
+        unreadnum = unreadnum < 0 ? 0 : unreadnum;
+        if (unreadnum > 0) {
+            msgNotify(true);
+        } else {
+            $(".im-toggle-bar").removeClass("msg-notify");
+        }
+        var data = {num: unreadnum};
+        var html = template('unread-num', data);
+        $(allUnreadNum).html(html)
+    };
+
+    /**
+     * 在聊天记录中添加一条消息
+     * @param msg
+     */
+    var chatHistory = '.chat-history';
+    exports.addMsg = function (msg) {
+        if (msg.type == 'GROUP') {
+            msg.selfRole = params.myGroup[params.selToID].SelfInfo.Role;
+        }
+        var html = template('one-message', msg);
+        $(chatHistory).append(html);
+        if (msg.hasImg) {
+            setTimeout(function () {
+                $(chatHistory).scrollTop($(chatHistory)[0].scrollHeight);
+            }, 500)
+        } else {
+            $(chatHistory).scrollTop($(chatHistory)[0].scrollHeight);
+        }
+    };
+
+
+    /**
+     * 在聊天记录中添加一条系统消息
+     * @param msg
+     */
+    exports.addSystemMsg = function (msg) {
+        console.log(msg);
+        var data = {
+            message: msg
+        };
+        var html = template('system-msg', data);
+        $(chatHistory).append(html);
+        $(chatHistory).scrollTop($(chatHistory)[0].scrollHeight);
+    };
+
+    /**
+     * 在聊天记录中添加一条时间
+     * @param sendTime
+     */
+    exports.addSendTime = function (sendTime) {
+        var data = {
+            sendTime: sendTime
+        };
+        var html = template('send-time', data);
+        $(chatHistory).append(html);
+    };
+
+    /**
+     * 清空聊天记录
+     */
+    exports.clearChatHistory = function () {
+        $(chatHistory).empty();
+    };
+
+    /**
+     * 当点击发送按钮时
+     */
+    $(document).on('click', '#sendBtn', function () {
+        var messageInput = $.trim($('#message-input').val());
+        event.fire('onSendMsg', messageInput);
+    });
+
+    /**
+     * 当按ENTER键时
+     */
+    $('#message-input').keyup(function (e) {
+        if (e.keyCode == 13) {
+            var messageInput = $.trim($(this).val());
+            event.fire('onSendMsg', messageInput);
+        }
+    });
+
+    /**
+     * 清空消息输入框
+     */
+    exports.clearMessageInput = function () {
+        $('#message-input').val('');
+    };
+
+    /**
+     * 当点击群设置
+     */
+    exports.onClickGroupSetting = function () {
+        event.fire('onClickGroupSetting');
+    };
+
+    /**
+     * 渲染群成员
+     * @param memberList
+     */
+    var groupUserList = '#groupUserList';
+    exports.renderGroupMember = function (memberList) {
+        var data = {
+            list: memberList,
+            selfAccount: params.loginInfo.identifier,
+            selfRole: params.myGroup[params.selToID].SelfInfo.Role,
+            nowTime: tools.getNowTime(),
+            nameCards: params.nameCard
+        };
+        var html = template('groupMemberList', data);
+        $(groupUserList).html(html)
+    };
+
+    /**
+     * 渲染群设置信息
+     * @param memberList
+     */
+    var groupSetting = '#groupSetting';
+    exports.renderGroupSetting = function (groupInfo) {
+        var html = template('group-setting', groupInfo);
+        $(groupSetting).html(html)
+    };
+
+    /**
+     * 监听搜索群成员输入框
+     */
+    var searchMemberFlag = null;
+    $(document).on('valuechange', 'input#search-member', function () {
+        var value = $(this).val();
+        clearTimeout(searchMemberFlag);
+        searchMemberFlag = setTimeout(function () {
+            exports.searchMember(value)
+        }, 500);
+    });
+
+    /**
+     * 搜索群成员
+     */
+    exports.searchMember = function (val) {
+        if (val.length > 0) {
+            $('.empty-member').show();
+            $('.groupUserList-item').hide();
+            if ($(".nickname:contains('" + val + "')").length > 0) {
+                $(".nickname:contains('" + val + "')").parents('.groupUserList-item').show();
+                $('.empty-member').hide();
+            }
+        } else {
+            $('.empty-member').hide();
+            $('.groupUserList-item').show();
+        }
+    };
+
+    /**
+     * 当点击私聊好友时
+     */
+    $(document).on('click', '.talk-to-friend', function () {
+        var userId = $(this).data('id');
+        if (userId != params.loginInfo.identifier && userId != params.selToID) {
+            event.fire('onChatToFriend', userId);
+        }
+    });
+
+    /**
+     * 当禁言用户时
+     */
+    $(document).on('click', '.ban-user', function () {
+        var userId = $(this).data('id');
+        var name = $(this).data('name');
+        if (userId != params.loginInfo.identifier && userId != params.selToID) {
+            event.fire('onBanUser', {
+                userId: userId,
+                name: name,
+            });
+            $(this).hide().siblings('.remove-ban-user').show();
+            $(this).parents('.right-menus').hide();
+            $(this).parents('.groupUserList-item').find('.member-name').after('<i class="glyphicon glyphicon-ban-circle"></i>')
+        }
+    });
+
+
+    /**
+     * 当解除禁言时
+     */
+    $(document).on('click', '.remove-ban-user', function () {
+        var userId = $(this).data('id');
+        var name = $(this).data('name');
+        if (userId != params.loginInfo.identifier && userId != params.selToID) {
+            event.fire('onRemoveBanUser', {
+                userId: userId,
+                name: name
+            });
+            $(this).hide().siblings('.ban-user').show();
+            $(this).parents('.right-menus').hide();
+            $(this).parents('.groupUserList-item').find('.glyphicon-ban-circle').remove()
+        }
+    });
+
+
+    /**
+     * 修改群简介
+     * @type {null}
+     */
+    var modifyGroupIntroductionFlag = null;
+    $(document).on('valuechange', '#group-introduction', function () {
+        clearTimeout(modifyGroupIntroductionFlag);
+        var value = $(this).val();
+        var id = $(this).data('id');
+        modifyGroupIntroductionFlag = setTimeout(function () {
+            event.fire('modifyGroupInfo', {
+                GroupId: id + '',
+                Introduction: value
+            })
+        }, 1000);
+    });
+
+    /**
+     * 修改群公告
+     * @type {null}
+     */
+    var modifyGroupNotificationFlag = null;
+    $(document).on('valuechange', '#group-notification', function () {
+        clearTimeout(modifyGroupNotificationFlag);
+        var value = $(this).val();
+        var id = $(this).data('id');
+        modifyGroupNotificationFlag = setTimeout(function () {
+            event.fire('modifyGroupInfo', {
+                GroupId: id + '',
+                Notification: value
+            })
+        }, 1000);
+    });
+
+    /**
+     * 修改群消息提示类型
+     */
+    $(document).on('click', '.msg-alert', function () {
+        var MsgFlag = $(this).data('type');
+        var group_id = $(this).data('id');
+        event.fire('modifyGroupMsgFlag', {
+            MsgFlag: MsgFlag,
+            group_id: group_id + ''
+        });
+        if (MsgFlag == 'AcceptAndNotify') {
+            $('#my-group-list').find('#' + group_id).find('.fa-bell-slash').remove()
+        } else {
+            if ($('#my-group-list').find('#' + group_id).find('.msg-count').length > 0) {
+                $('#my-group-list').find('#' + group_id).find('.msg-count').after('<i class="fa fa-bell-slash"></i>')
+            } else {
+                $('#my-group-list').find('#' + group_id).find('.last-msg').after('<i class="fa fa-bell-slash"></i>')
+            }
+        }
+    });
+
+    /**
+     * 当点击退出聊天室
+     */
+    $(document).on('click', '.quit-group', function () {
+        if (confirm('确认要退出聊天室吗?')) {
+            event.fire('onQuitGroup');
+        }
+    });
+
+    /**
+     * 当点击删除好友
+     */
+    $(document).on('click', '.delete-friend', function (e) {
+        e.stopPropagation();
+        var id = $(this).data('id');
+        $(this).parents('.contact-item').remove();
+        event.fire('onDeleteFriend', id);
+    });
+
+    /**
+     * 切换授课班,切换聊天室
+     */
+    $(document).on('click', '.course-class-info', function () {
+        var classId = $(this).data('id');
+        $('.class-chatRoom').hide();
+        $('.class-chatRoom-' + classId).show();
+    });
+
+    $(document).ajaxError(function (event, jqxhr, settings, exception) {
+        $('.enter-into-im-btn').html('<i class="fa fa-commenting "></i> 聊天室').removeClass('disabled');
+        $('.talk-to-teacher').html('<i class="fa fa-user "></i> 咨询老师').removeClass('disabled');
+        $(".im-chat-window").hide();
+    });
+});
